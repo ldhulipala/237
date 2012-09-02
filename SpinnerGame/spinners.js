@@ -6,6 +6,8 @@ var intervalId;
 var timer_delay = 10;
 var current_spinner;
 
+var TOTAL_CIRCLE_RADIANS = 2*Math.PI;
+
 // Draw black background
 ctx.fillStyle = "#000000";
 ctx.fillRect(0, 0, 400, 400);
@@ -31,9 +33,15 @@ function Spinner(px, py, vx, vy, rps, color) {
 Spinner.prototype.inner_radius = 10; // Radius of inner circle
 Spinner.prototype.outer_radius = 5;  // Radius of orbitting circles
 Spinner.prototype.orbit_radius = 80; // Orbit radius
+Spinner.prototype.num_circles = 7;
 
 // Draws a Spinner at the current origin (assumed to be translated)
 Spinner.prototype.draw = function(ctx) {
+    var start_radian = 0; // Angle of first outer circle
+    // Distance between each outer circle
+    var radians_per_circle = TOTAL_CIRCLE_RADIANS/this.num_circles;
+    var i;
+
     ctx.save();
     ctx.translate(this.px, this.py);
     ctx.rotate(this.angle);
@@ -41,11 +49,19 @@ Spinner.prototype.draw = function(ctx) {
     // Draw the inner circle
     drawCircle(ctx, 0, 0, this.inner_radius, this.color);
 
+    for (i = 0; i < this.num_circles; i++) {
+        var x_coordinate = this.orbit_radius*Math.cos(start_radian);
+        var y_coordinate = this.orbit_radius*Math.sin(start_radian);
+        drawCircle(ctx, x_coordinate, y_coordinate, this.outer_radius, this.color);
+
+        start_radian += radians_per_circle;
+
+    }
     // Draw the orbitting circles
-    drawCircle(ctx, this.orbit_radius, 0, this.outer_radius, this.color);
-    drawCircle(ctx, 0, this.orbit_radius, this.outer_radius, this.color);
-    drawCircle(ctx, -this.orbit_radius, 0, this.outer_radius, this.color);
-    drawCircle(ctx, 0, -this.orbit_radius, this.outer_radius, this.color);
+    // drawCircle(ctx, this.orbit_radius, 0, this.outer_radius, this.color);
+    // drawCircle(ctx, 0, this.orbit_radius, this.outer_radius, this.color);
+    // drawCircle(ctx, -this.orbit_radius, 0, this.outer_radius, this.color);
+    // drawCircle(ctx, 0, -this.orbit_radius, this.outer_radius, this.color);
 
     ctx.restore();
 }
