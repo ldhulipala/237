@@ -152,7 +152,7 @@ Spinner.prototype.update = function(elapsed_ms) {
 function redrawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, 400, 400);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
  //   current_spinner.draw(ctx);
 
@@ -174,7 +174,7 @@ function redrawAll() {
     }
     if (current_spinners.length < 2) {
         var num_circles = Math.floor((Math.random()*8)+1);
-        var new_spinner = new Spinner(400, 400, -50, -50, Math.PI/4,
+        var new_spinner = new Spinner(canvas.width, canvas.height, -50, -50, Math.PI/4,
                                       "#00FF00", num_circles);
         current_spinners.push(new_spinner);
     }
@@ -186,7 +186,7 @@ function onTimer() {
 
 function run() {
 //    current_spinner = new Spinner(400, 400, -50, -50, Math.PI/4, "#00FF00", 7);
-    var spinner1 = new Spinner(400, 400, -50, -50, Math.PI/4, "#00FF00", 7);
+    var spinner1 = new Spinner(canvas.width, canvas.height, -50, -50, Math.PI/4, "#00FF00", 7);
     var spinner2 = new Spinner(200, 200, -50, -50, Math.PI/4, "#00FF00", 4);
     current_spinners.push(spinner1);
     current_spinners.push(spinner2);
