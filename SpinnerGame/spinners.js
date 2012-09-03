@@ -100,12 +100,14 @@ Spinner.prototype.isCollision = function(x, y) {
 }
 
 
-function onMouseDown(event) {
+function onMouseMove(event) {
     var x = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
     var y = event.pageY - canvas.offsetTop;
-    console.log(current_spinner.isCollision(x,y));
+    if (current_spinner.isCollision(x,y)) {
+        window.clearInterval(intervalId);
+    }
 }
-canvas.addEventListener('mousedown', onMouseDown, false);
+canvas.addEventListener('mousemove', onMouseMove, false);
 
 
 
