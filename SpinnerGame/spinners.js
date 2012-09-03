@@ -98,6 +98,19 @@ Spinner.prototype.isCollision = function(x, y) {
     return false;
 }
 
+Spinner.prototype.isActive = function() {
+   var xright = this.px + this.orbit_radius + this.outer_radius;
+   var xleft = this.px - this.orbit_radius - this.outer_radius;
+   var yup = this.py - this.orbit_radius - this.outer_radius;
+   var ydown = this.py + this.orbit_radius + this.outer_radius;
+   if ((xright < 0) || (xleft > ctx.width) || (ydown < 0) || (yup >
+            ctx.height)) {
+      /* Check to ensure that the spinner is still on the canvas. */
+       return false;
+   }
+   return true;
+ }
+
 
 function onMouseMove(event) {
     var x = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
@@ -144,10 +157,27 @@ function redrawAll() {
  //   current_spinner.draw(ctx);
 
 //    current_spinner.update(timer_delay);
-    current_spinners.forEach(function (the_spinner) {
+/*    current_spinners.forEach(function (the_spinner) {
         the_spinner.draw(ctx);
         the_spinner.update(timer_delay);
-    });
+
+    }); */
+    for (var i = 0; i < current_spinners.length; i++) {
+        var the_spinner = current_spinners[i];
+        the_spinner.draw(ctx);
+        the_spinner.update(timer_delay);
+        if (!the_spinner.isActive()) {
+            console.log("Deleting spinner");
+            // The spinner is no longer on the board
+            current_spinners.splice(i,1);
+        }
+    }
+    if (current_spinners.length < 2) {
+        var num_circles = Math.floor((Math.random()*8)+1);
+        var new_spinner = new Spinner(400, 400, -50, -50, Math.PI/4,
+                                      "#00FF00", num_circles);
+        current_spinners.push(new_spinner);
+    }
 }
 
 function onTimer() {
