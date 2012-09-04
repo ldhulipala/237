@@ -1,6 +1,6 @@
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
-
+//woot
 var intervalId;
 var timer_delay = 10;
 var MOUSE_RADIUS = 5;
