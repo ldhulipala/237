@@ -5,6 +5,7 @@ var intervalId;
 var intervalId;
 var timer_delay = 10;
 var current_spinner;
+var current_spinners = new Array;
 
 var TOTAL_CIRCLE_RADIANS = 2*Math.PI;
 
@@ -20,12 +21,11 @@ function drawCircle(ctx, cx, cy, radius, color) {
 }
 
 
-
 // Spinner with 4 orbit circles
 function Spinner(px, py, vx, vy, rps, color, num_circles) {
     var start_radian = 0; // Angle of first outer circle
     // Distance between each outer circle
-    var radians_per_circle = TOTAL_CIRCLE_RADIANS/this.num_circles;
+    var radians_per_circle = TOTAL_CIRCLE_RADIANS/num_circles;
     var x_coord;
     var y_coord;
 
@@ -48,7 +48,6 @@ function Spinner(px, py, vx, vy, rps, color, num_circles) {
 Spinner.prototype.inner_radius = 10; // Radius of inner circle
 Spinner.prototype.outer_radius = 5;  // Radius of orbitting circles
 Spinner.prototype.orbit_radius = 80; // Orbit radius
-Spinner.prototype.num_circles = 7;
 
 // Draws a Spinner at the current origin (assumed to be translated)
 Spinner.prototype.draw = function(ctx) {
@@ -96,13 +95,31 @@ Spinner.prototype.isCollision = function(x, y) {
     return false;
 }
 
+Spinner.prototype.isActive = function() {
+   var xright = this.px + this.orbit_radius + this.outer_radius;
+   var xleft = this.px - this.orbit_radius - this.outer_radius;
+   var yup = this.py - this.orbit_radius - this.outer_radius;
+   var ydown = this.py + this.orbit_radius + this.outer_radius;
+   if ((xright < 0) || (xleft > ctx.width) || (ydown < 0) || (yup >
+            ctx.height)) {
+      /* Check to ensure that the spinner is still on the canvas. */
+       return false;
+   }
+   return true;
+ }
+
 
 function onMouseMove(event) {
     var x = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
     var y = event.pageY - canvas.offsetTop;
-    if (current_spinner.isCollision(x,y)) {
+/*    if (current_spinner.isCollision(x,y)) {
         window.clearInterval(intervalId);
-    }
+    } */
+    current_spinners.forEach(function (the_spinner) {
+        if (the_spinner.isCollision(x,y)) {
+            window.clearInterval(intervalId);
+        }
+    });
 }
 canvas.addEventListener('mousemove', onMouseMove, false);
 
@@ -120,7 +137,7 @@ Spinner.prototype.update = function(elapsed_ms) {
     this.py += this.vy * elapsed_secs;
 
     this.angle += (this.rps * elapsed_secs);
-    this.angle = this.angle % (2 * Math.PI);  
+    this.angle = this.angle % (2 * Math.PI);
 
     for (i = 0; i < this.num_circles; i++) {
         this.circle_angles[i] += (this.rps * elapsed_secs);
@@ -132,11 +149,32 @@ Spinner.prototype.update = function(elapsed_ms) {
 function redrawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, 400, 400);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    current_spinner.draw(ctx);
+ //   current_spinner.draw(ctx);
 
-    current_spinner.update(timer_delay);
+//    current_spinner.update(timer_delay);
+/*    current_spinners.forEach(function (the_spinner) {
+        the_spinner.draw(ctx);
+        the_spinner.update(timer_delay);
+
+    }); */
+    for (var i = 0; i < current_spinners.length; i++) {
+        var the_spinner = current_spinners[i];
+        the_spinner.draw(ctx);
+        the_spinner.update(timer_delay);
+        if (!the_spinner.isActive()) {
+            console.log("Deleting spinner");
+            // The spinner is no longer on the board
+            current_spinners.splice(i,1);
+        }
+    }
+    if (current_spinners.length < 2) {
+        var num_circles = Math.floor((Math.random()*8)+1);
+        var new_spinner = new Spinner(canvas.width, canvas.height, -50, -50, Math.PI/4,
+                                      "#00FF00", num_circles);
+        current_spinners.push(new_spinner);
+    }
 }
 
 function onTimer() {
@@ -144,7 +182,11 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new Spinner(400, 400, -50, -50, Math.PI/4, "#00FF00", 7);
+//    current_spinner = new Spinner(400, 400, -50, -50, Math.PI/4, "#00FF00", 7);
+    var spinner1 = new Spinner(canvas.width, canvas.height, -50, -50, Math.PI/4, "#00FF00", 7);
+    var spinner2 = new Spinner(200, 200, -50, -50, Math.PI/4, "#00FF00", 4);
+    current_spinners.push(spinner1);
+    current_spinners.push(spinner2);
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
