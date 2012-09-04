@@ -71,11 +71,8 @@ Spinner.prototype.draw = function(ctx) {
     ctx.restore();
 }
 
-function inCircle(x_coord, y_coord, x_center, y_center, radius) {
-    return (x_center - radius <= x_coord &&
-            x_coord <= x_center + radius &&
-            y_center - radius <= y_coord &&
-            y_coord <= y_center + radius);
+Spinner.prototype.inShape = function inShaded(x_coord, y_coord, x_center, y_center, radius) {
+    return (Math.sqrt(Math.pow(x_coord - x_center,2) + Math.pow(y_coord - y_center,2)) <= radius);
 }
 
 Spinner.prototype.isCollision = function(x, y) {
@@ -83,16 +80,16 @@ Spinner.prototype.isCollision = function(x, y) {
     var angle;
     var x_coord;
     var y_coord;
-    // Check middle circle
-    if (inCircle(x, y, this.px, this.py, this.inner_radius)) {
+    // Check middle shape
+    if (inShape(x, y, this.px, this.py, this.inner_radius)) {
         return true;
     }
-    // Check orbital circles
+    // Check orbital shapes
     for (i = 0; i < this.num_circles; i++) {
         angle = this.circle_angles[i];
         x_coord = this.orbit_radius*Math.cos(angle);
         y_coord = this.orbit_radius*Math.sin(angle);
-        if (inCircle(x, y, this.px + x_coord, this.py + y_coord, this.outer_radius)) {
+        if (inShape(x, y, this.px + x_coord, this.py + y_coord, this.outer_radius)) {
             return true;
         }
     }
