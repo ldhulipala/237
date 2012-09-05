@@ -95,7 +95,22 @@ Spinner.prototype.isActive = function() {
 
 Spinner.prototype.draw = function(ctx) {}
 // detectCollision - may replace 'area' argument with 'mouse_object'.
-Spinner.prototype.detectCollision = function() {} 
+Spinner.prototype.detectCollision = function(inShape) {
+    var i;
+    var displace_x;
+    var displace_y;
+    if (inShape(this.pos_x, this.pos_y, this.inner_radius)) {
+        return true;
+    }
+    for (i = 0; i < this.num_orbiting_circles; i++) {
+        displace_x = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
+        displace_y = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
+        if (inShape(this.pos_x + displace_x, this.pos_y + displace_y, this.outer_circle_radius)) {
+            return true;
+        }
+    }
+    return false;
+} 
 Spinner.prototype.update = function(elapsed_ms) {}
 
 
@@ -239,22 +254,22 @@ RedSpinner.prototype.inShape = function(shape_x, shape_y, shape_radius) {
     return (Math.sqrt(Math.pow(MOUSE_X - shape_x,2) + Math.pow(MOUSE_Y- shape_y,2)) <= MOUSE_RADIUS + shape_radius);
 }
 
-RedSpinner.prototype.detectCollision = function() {
-    var i;
-    var displace_x;
-    var displace_y;
-    if (this.inShape(this.pos_x, this.pos_y, this.inner_radius)) {
-        return true;
-    }
-    for (i = 0; i < this.num_orbiting_circles; i++) {
-        displace_x = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
-        displace_y = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
-        if (this.inShape(this.pos_x + displace_x, this.pos_y + displace_y, this.outer_circle_radius)) {
-            return true;
-        }
-    }
-    return false;
-} 
+// RedSpinner.prototype.detectCollision = function() {
+//     var i;
+//     var displace_x;
+//     var displace_y;
+//     if (this.inShape(this.pos_x, this.pos_y, this.inner_radius)) {
+//         return true;
+//     }
+//     for (i = 0; i < this.num_orbiting_circles; i++) {
+//         displace_x = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
+//         displace_y = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
+//         if (this.inShape(this.pos_x + displace_x, this.pos_y + displace_y, this.outer_circle_radius)) {
+//             return true;
+//         }
+//     }
+//     return false;
+// // } 
 
 RedSpinner.prototype.update = function(elapsed_ms) {
     var orbit_radius = this.orbit_radius;
@@ -453,93 +468,6 @@ var GREEN_INITIAL_POSITION_X;
 var GREEN_INITIAL_POSITION_Y;
 var GREEN_INITIAL_ORBIT_RADIUS;
 
-/************************************/
-/* Define the Green Spinner object */
-/************************************/
-function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
-                       inner_radius, orbit_radius) {
-
-    // Green Spinners are defined to have 12 orbiting circles with radius 5.
-    var num_orbiting_circles = 12;
-    var outer_circle_radius = 5; 
-
-    // Area bounds for the spinner.
-    var x_min = pos_x - orbit_radius - outer_circle_radius;
-    var y_min = pos_y - orbit_radius - outer_circle_radius;
-    var x_max = pos_x + orbit_radius + outer_circle_radius;
-    var y_max = pos_y + orbit_radius + outer_circle_radius; 
-
-    GREEN_INITIAL_POSITION_X = pos_x;
-    GREEN_INITIAL_POSITION_Y = pos_y;
-    GREEN_INITIAL_ORBIT_RADIUS = orbit_radius;
-
-    // Call the parent constructor.
-    Spinner.call(this, "green", pos_x, pos_y, vel_x, vel_y, rps, 
-                 inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius);
-    // Define the spinner's area.
-    this.area = new Area(x_min, y_min, x_max, y_max);
-
-    // Green Spinners are defined to have 12 orbiting circles with radius 5.
-    this.num_orbiting_circles = num_orbiting_circles;
-    this.outer_circle_radius = outer_circle_radius;
-}
-
-// Set up inheritance, correct the constructor.
-GreenSpinner.prototype = new RedSpinner();
-GreenSpinner.prototype.constructor = GreenSpinner;
-
-GreenSpinner.prototype.update = function(elapsed_ms) {
-    var orbit_radius;
-    var outer_circle_radius;
-    var x_min;
-    var y_min;
-    var x_max;
-    var y_max;
-    var i;
-    var elapsed_secs;
-    var green_delta_radius = 0.5;
-
-   if (Math.sqrt(Math.pow(GREEN_INITIAL_POSITION_X - this.pos_x, 2) +
-        Math.pow(GREEN_INITIAL_POSITION_Y - this.pos_y,2)) >= canvas.width/2) {
-        if (this.orbit_radius < GREEN_INITIAL_ORBIT_RADIUS) {
-            this.orbit_radius += green_delta_radius; 
-        }
-        else {
-            // Delete the circle
-        }   
-    }
-    else {
-
-    }
-
-    this.orbit_radius += yellow_delta_radius;
-    orbit_radius = this.orbit_radius;
-    outer_circle_radius = this.outer_circle_radius;
-
-    // Calculate new boundaries
-    x_min = this.pos_x - orbit_radius - outer_circle_radius;
-    y_min = this.pos_y - orbit_radius - outer_circle_radius;
-    x_max = this.pos_x + orbit_radius + outer_circle_radius;
-    y_max = this.pos_y + orbit_radius + outer_circle_radius;
-    i;
-
-    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
-
-    // Calculate new center of middle circle and angle of orbiting circles.
-    this.pos_x += this.vel_x * elapsed_secs;
-    this.pos_y += this.vel_y * elapsed_secs;
-    this.angle += (this.rps * elapsed_secs);
-    this.angle = this.angle % FULL_ROTATION; 
-
-    // Update the area of the spinner every time.
-    this.area.update(x_min, y_min, x_max, y_max);
-
-    for (i = 0; i < this.num_orbiting_circles; i++) {
-        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
-        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
-    }
-}
-
 
 /************************************/
 /* Define the Green Spinner object */
@@ -638,7 +566,7 @@ GreenSpinner.prototype.update = function(elapsed_ms) {
 function onMouseMove(event) {
     MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
     MOUSE_Y = event.pageY - canvas.offsetTop;
-    if (current_spinner.detectCollision() === true) {
+    if (current_spinner.detectCollision(current_spinner.inShape) === true) {
         window.clearInterval(intervalId);
     }
 }
