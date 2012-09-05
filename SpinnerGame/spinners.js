@@ -594,7 +594,7 @@ GreenSpinner.prototype.update = function(elapsed_ms) {
     if (this.getDistTraveled() > (Math.min(canvas.width, canvas.height)/2)) {
         this.vel_x = 0;
         this.vel_y = 0;
-        this.orbit_radius += (this.delta_radius / elapsed_secs);
+        this.orbit_radius += (this.delta_radius * elapsed_secs);
     }
 
     orbit_radius = this.orbit_radius;
