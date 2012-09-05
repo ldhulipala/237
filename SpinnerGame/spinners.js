@@ -2,6 +2,7 @@ var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 
 var intervalId;
+var spawnIntervalId;
 var timer_delay = 10;
 
 var spinners_on_board;
@@ -121,6 +122,40 @@ Spinner.prototype.isActive = function() {
     return detectAreaOverlap(this.area, CANVAS_AREA);
 }
 
+Spinner.prototype.updateSpinners = function(elapsed_ms) {
+    var orbit_radius;
+    var outer_circle_radius;
+    var x_min;
+    var y_min;
+    var x_max;
+    var y_max;
+    var i; 
+    orbit_radius = this.orbit_radius;
+    outer_circle_radius = this.outer_circle_radius;
+
+    // Calculate new boundaries
+    x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    y_max = this.pos_y + orbit_radius + outer_circle_radius;
+
+    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
+
+    // Calculate new center of middle circle and angle of orbiting circles.
+    this.pos_x += this.vel_x * elapsed_secs;
+    this.pos_y += this.vel_y * elapsed_secs;
+    this.angle += (this.rps * elapsed_secs);
+    this.angle = this.angle % FULL_ROTATION; 
+
+    // Update the area of the spinner every time.
+    this.area.update(x_min, y_min, x_max, y_max);
+
+    for (i = 0; i < this.num_orbiting_circles; i++) {
+        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
+        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
+    }
+}
+
 Spinner.prototype.draw = function(ctx) {}
 Spinner.prototype.draw_fn = function(ctx, center_x, center_y, start_angle, end_angle, radius, color) {}
 // detectCollision - may replace 'area' argument with 'mouse_object'.
@@ -149,56 +184,23 @@ Spinner.prototype.update = function(elapsed_ms) {}
 /*********************************/
 /* Define the Red Spinner object */
 /*********************************/
-function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
-                    inner_radius, orbit_radius) {
+function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     // Red Spinners are defined to have 4 orbiting circles, all of which
-    // have radius 5.
+    // have radius 5. They're shaped like screws with 5 ridges on the inner
+    // circle and 4 on the outer circle. 
     var num_orbiting_circles = 4;
-    var outer_circle_radius = 5;
+    var outer_circle_radius = 8;
 
     var inner_num_ridges = 5;
     var outer_num_ridges = 4;
-    var inner_delta_radians = (2*Math.PI)/(2*inner_num_ridges);
-    var outer_delta_radians = (2*Math.PI)/(2*outer_num_ridges);
-    var radian_angle = 0;
 
-    var i;
-    var j;
+    var inner_radius = 15;
+    var orbit_radius = 50;
 
     // Call the parent constructor.
     Spinner.call(this, "red", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius,
                  inner_num_ridges, outer_num_ridges);
-    
-    // Red Spinners are defined to have 4 orbiting circles, all of which
-    // have radius 5.
-    this.num_orbiting_circles = num_orbiting_circles;
-    this.outer_circle_radius = outer_circle_radius;
-    this.inner_delta_radians = inner_delta_radians;
-    this.outer_delta_radians = outer_delta_radians;
-    this.outer_circle_radius = outer_circle_radius;
-    
-    this.inner_num_ridges = inner_num_ridges;
-    this.outer_num_ridges = outer_num_ridges;
-
-    this.inner_ridge_angles = new Array(inner_num_ridges);
-    this.outer_ridge_angles = new Array(num_orbiting_circles);
-
-    for (i = 0; i < inner_num_ridges; i++) {
-        this.inner_ridge_angles[i] = radian_angle;
-        radian_angle += 2*inner_delta_radians;
-    }
-
-    radian_angle = 0;
-
-    for (i = 0; i < num_orbiting_circles; i++) {
-        this.outer_ridge_angles[i] = new Array(outer_num_ridges);
-        console.log(outer_num_ridges);
-        for (j = 0; j < outer_num_ridges; j++) {
-            this.outer_ridge_angles[i][j] = radian_angle + i*outer_delta_radians;
-            radian_angle += 2*outer_delta_radians;
-        }
-    }
 }
 
 // Set up inheritance, correct the constructor.
@@ -309,55 +311,24 @@ RedSpinner.prototype.update = function(elapsed_ms) {
 /************************************/
 // OrangeSpinner - 6 outer circles, orbit_radius increases/decreases as a
 //    function of time.
-function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
-                       inner_radius, orbit_radius) {
-
+function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     // Orange Spinners are defined to have 6 orbiting circles, all of which
-    // fluctuate between radius 5 and 10.
+    // have fluctuating radiuses.
     var num_orbiting_circles = 6;
-    var outer_circle_radius = 5;
+    var outer_circle_radius = 5; 
 
-    var inner_num_ridges = 4; // Number of spikes on inner circle
-    var outer_num_ridges = 3; // Nummber of spikes on outer circles
-    var inner_delta_radians = Math.PI/inner_num_ridges;
-    var outer_delta_radians = Math.PI/outer_num_ridges;
-    var radian_angle = 0;
+    // Orange spinners have sharp ridges around the main circle.
+    var inner_num_ridges = 4;
+    var outer_num_ridges = 3; 
 
-    var i;
-    var j;
+    var inner_radius = 4;
+    var orbit_radius = 100;
 
     // Call the parent constructor.
     Spinner.call(this, "orange", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius,
                  inner_num_ridges, outer_num_ridges);
-
-    // Orange Spinners are defined to have 6 orbiting circles, all of which
-    // fluctuate between radius 5 and 10.
-    this.num_orbiting_circles = num_orbiting_circles;
-    this.outer_circle_radius = outer_circle_radius;
-    this.inner_delta_radians = inner_delta_radians;
-    this.outer_delta_radians = outer_delta_radians;
-
-    this.inner_num_ridges = inner_num_ridges;
-    this.outer_num_ridges = outer_num_ridges;
-
-    this.inner_ridge_angles = new Array(inner_num_ridges);
-    this.outer_ridge_angles = new Array(num_orbiting_circles);
-
-    for (i = 0; i < inner_num_ridges; i++) {
-        this.inner_ridge_angles[i] = radian_angle;
-        radian_angle += 2*inner_delta_radians;
-    }
-
-    radian_angle = 0;
-
-    for (i = 0; i < num_orbiting_circles; i++) {
-        this.outer_ridge_angles[i] = new Array(outer_num_ridges);
-        for (j = 0; j < outer_num_ridges; j++) {
-            this.outer_ridge_angles[i][j] = radian_angle + i*outer_delta_radians;
-            radian_angle += 2*outer_delta_radians;
-        }
-    }
+    
 }
 
 // Set up inheritance, correct the constructor.
@@ -378,7 +349,6 @@ OrangeSpinner.prototype.draw_fn = function(ctx, center_x, center_y, start_angle,
     
     ctx.fillStyle = color;
     ctx.beginPath();
-    console.log('center x ' + center_x);
 
     // Left line
     ctx.moveTo(center_x + start_x, center_y + start_y);
@@ -390,15 +360,6 @@ OrangeSpinner.prototype.draw_fn = function(ctx, center_x, center_y, start_angle,
 }
 
 OrangeSpinner.prototype.update = function(elapsed_ms) {
-    var orbit_radius;
-    var outer_circle_radius;
-    var x_min;
-    var y_min;
-    var x_max;
-    var y_max;
-    var i;
-    var elapsed_secs;
-
     if (this.outer_circle_radius === 20) {
         orange_delta_radius = -0.5;
     }
@@ -406,27 +367,7 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {
         orange_delta_radius = 0.5;
     }
     this.outer_circle_radius += orange_delta_radius;
-    orbit_radius = this.outer_circle_radius;
-    outer_circle_radius = this.outer_circle_radius;
-    x_min = this.pos_x - orbit_radius - outer_circle_radius;
-    y_min = this.pos_y - orbit_radius - outer_circle_radius;
-    x_max = this.pos_x + orbit_radius + outer_circle_radius;
-    y_max = this.pos_y + orbit_radius + outer_circle_radius;
-
-    elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
-
-    this.pos_x += this.vel_x * elapsed_secs;
-    this.pos_y += this.vel_y * elapsed_secs;
-    this.angle += (this.rps * elapsed_secs);
-    this.angle = this.angle % FULL_ROTATION; 
-
-    // Update the area of the spinner every time.
-    this.area.update(x_min, y_min, x_max, y_max);
-
-    for (i = 0; i < this.num_orbiting_circles; i++) {
-        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
-        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
-    }
+    this.updateSpinners(elapsed_ms);
 }
 
 /************************************/
@@ -435,40 +376,38 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {
 var YELLOW_INITIAL_ORBIT_RADIUS;
 var yellow_delta_radius = 0.5;
 
-function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
-                       inner_radius, orbit_radius) {
+function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
 
-    // Orange Spinners are defined to have 6 orbiting circles, all of which
-    // fluctuate between radius 5 and 10.
+    // Yellow Spinners are defined to have 6 orbiting circles. The
+    // distance between the inner circle and orbit circle  
+    // increases over time. 
     var num_orbiting_circles = 6;
     var outer_circle_radius = 5; 
 
+    // Yellow spinners do not have anything unique about their shape.
+    var inner_num_ridges = 0;
+    var outer_num_ridges = 0; 
+
+    var inner_radius = 10;
+    var orbit_radius = 100;
+
+    // We need to remember the initial radius, so we know the max and min
+    // size of the orbitting radiuses.
     YELLOW_INITIAL_ORBIT_RADIUS = orbit_radius;
 
     // Call the parent constructor.
     Spinner.call(this, "yellow", pos_x, pos_y, vel_x, vel_y, rps, 
-                 inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius, 0, 0);
-
-    // Orange Spinners are defined to have 6 orbiting circles, all of which
-    // fluctuate between radius 5 and 10.
-    this.num_orbiting_circles = num_orbiting_circles;
-    this.outer_circle_radius = outer_circle_radius;
+                 inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius,
+                 inner_num_ridges, outer_num_ridges);
 }
 
 // Set up inheritance, correct the constructor.
 YellowSpinner.prototype = new RedSpinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
 
-YellowSpinner.prototype.update = function(elapsed_ms) {
-    var orbit_radius;
-    var outer_circle_radius;
-    var x_min;
-    var y_min;
-    var x_max;
-    var y_max;
-    var i;
-    var elapsed_secs;
 
+
+YellowSpinner.prototype.update = function(elapsed_ms) {
     // Start decreasing orbit radius
     if (this.orbit_radius === 2*YELLOW_INITIAL_ORBIT_RADIUS) {
         yellow_delta_radius = -0.5;
@@ -479,31 +418,7 @@ YellowSpinner.prototype.update = function(elapsed_ms) {
     }
 
     this.orbit_radius += yellow_delta_radius;
-    orbit_radius = this.orbit_radius;
-    outer_circle_radius = this.outer_circle_radius;
-
-    // Calculate new boundaries
-    x_min = this.pos_x - orbit_radius - outer_circle_radius;
-    y_min = this.pos_y - orbit_radius - outer_circle_radius;
-    x_max = this.pos_x + orbit_radius + outer_circle_radius;
-    y_max = this.pos_y + orbit_radius + outer_circle_radius;
-    i;
-
-    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
-
-    // Calculate new center of middle circle and angle of orbiting circles.
-    this.pos_x += this.vel_x * elapsed_secs;
-    this.pos_y += this.vel_y * elapsed_secs;
-    this.angle += (this.rps * elapsed_secs);
-    this.angle = this.angle % FULL_ROTATION; 
-
-    // Update the area of the spinner every time.
-    this.area.update(x_min, y_min, x_max, y_max);
-
-    for (i = 0; i < this.num_orbiting_circles; i++) {
-        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
-        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
-    }
+    this.updateSpinners(elapsed_ms);
 }
 
 var GREEN_INITIAL_POSITION_X;
@@ -514,30 +429,24 @@ var GREEN_INITIAL_ORBIT_RADIUS;
 /************************************/
 /* Define the Green Spinner object */
 /************************************/
-function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
-                      inner_radius, orbit_radius) {
+function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
 
     // Green Spinners are defined to have 12 orbiting circles, all of radius
     // 5.
     var num_orbiting_circles = 12;
     var outer_circle_radius = 5; 
 
-    // Area bounds for the spinner.
-    var x_min = pos_x - orbit_radius - outer_circle_radius;
-    var y_min = pos_y - orbit_radius - outer_circle_radius;
-    var x_max = pos_x + orbit_radius + outer_circle_radius;
-    var y_max = pos_y + orbit_radius + outer_circle_radius; 
+     // Green spinners do not have any ridges.
+    var inner_num_ridges = 0;
+    var outer_num_ridges = 0; 
+
+    var inner_radius = 10;
+    var orbit_radius = 100;
 
     // Call the parent constructor.
     Spinner.call(this, "green", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius, num_orbiting_circles, 
-                 outer_circle_radius, 0, 0);
-
-    // Define the spinner's area.
-    this.area = new Area(x_min, y_min, x_max, y_max);
-
-    this.num_orbiting_circles = num_orbiting_circles;
-    this.outer_circle_radius = outer_circle_radius;
+                 outer_circle_radius, inner_num_ridges, outer_num_ridges);
 
     // The amount that this.orbit_radius increases per second.
     this.delta_radius = orbit_radius;
@@ -623,16 +532,17 @@ function onMouseMove(event) {
 canvas.addEventListener('mousemove', onMouseMove, false);
 
 function redrawAll() {
+    var spinner;
+    var i;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     
-    current_spinner.draw(ctx);
-    current_spinner.update(timer_delay);
-    
-    if (!current_spinner.isActive()) {
-        current_spinner = new RedSpinner(canvas.width, canvas.height, 
-                                         -canvas.width/10, -canvas.height/10,
-                                         Math.PI, 10, 100, 4, 5); 
+    console.log('a ' + spinners_on_board);
+    for (i = 0; i < spinners_on_board.length; i++) {
+        spinner = spinners_on_board[i];
+        console.log(typeof(spinner));
+        spinner.draw(ctx);
+        spinner.update(timer_delay);
     }
 }
 
@@ -645,44 +555,65 @@ function spawn() {
     // Create four values between 0 and 3
     var choice = Math.floor(rand/0.25); 
     var newSpinner;
-
+    var constructor;
+    console.log('HERE');
     if (choice === 0) {
-        newSpinner = new OrangeSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+        constructor = OrangeSpinner;
     }
     else if (choice === 1) {
-        newSpinner = new RedSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+        constructor = RedSpinner;
     }
     else if (choice === 2) {
-        newSpinner = new YellowSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+        constructor = YellowSpinner;
     }
     else if (choice === 3) {
-        newSpinner = new GreenSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+        constructor = GreenSpinner;
     }
-    // alert('Choice is ' + choice);
-    // console.log(typeof(spinners_on_board));
-    // console.log(spinners_on_board);
-    // spinners_on_board = spinners_on_board.push(newSpinner);
-    // setTimeout(spawn, 1000);
+    newSpinner = getRandomizedSpinner(constructor);
+    console.log('THIS ' + newSpinner);
+    spinners_on_board.push(newSpinner);
+    return;
 }
 
+function getRandomizedSpinner(spinner_constructor) {
+    var start_x;
+    var start_y;
+    var index;
+    var spinner;
+    var start_positions_x = [0, canvas.width];
+    var start_positions_y = [0, canvas.height];
+    // Velocity is in range [canvas.size/10, canvas.size/4]
+    var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
+    var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
+    // RPS is in range [Pi/2, 3Pi/2]
+    var rps = Math.PI/2 + Math.random()*Math.PI;
+
+    index = Math.floor(Math.random() + 0.5);
+    start_x = start_positions_x[index];
+    index = Math.floor(Math.random() + 0.5);
+    start_y = start_positions_y[index];
+
+    if (start_x === canvas.width) {
+        velocity_x = -1*velocity_x;
+    } 
+    if (start_y === canvas.height) {
+        velocity_y = -1*velocity_y;
+    }
+    spinner = new spinner_constructor(start_x, start_y, velocity_x, velocity_y, rps)
+    return spinner;
+}
+
+
 function run() {
-    spinners_on_board = new Array(0);
-    spawn();
-    current_spinner = new RedSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+    spinners_on_board = [];
+
+    current_spinner = new GreenSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10, Math.PI);
 
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
+    spawnIntervalId = setInterval(spawn, 1000);
 }
 
 run();
