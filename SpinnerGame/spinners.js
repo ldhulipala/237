@@ -4,6 +4,7 @@ var ctx = canvas.getContext("2d");
 var intervalId;
 var timer_delay = 10;
 
+var spinners_on_board;
 var current_spinner;
 
 var FULL_ROTATION = 2*Math.PI; // Number of radians in a circle.
@@ -161,12 +162,6 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var outer_delta_radians = (2*Math.PI)/(2*outer_num_ridges);
     var radian_angle = 0;
 
-    // Area bounds for the spinner.
-    var x_min = pos_x - orbit_radius - outer_circle_radius;
-    var y_min = pos_y - orbit_radius - outer_circle_radius;
-    var x_max = pos_x + orbit_radius + outer_circle_radius;
-    var y_max = pos_y + orbit_radius + outer_circle_radius; 
-
     var i;
     var j;
 
@@ -181,10 +176,6 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     this.outer_circle_radius = outer_circle_radius;
     this.inner_delta_radians = inner_delta_radians;
     this.outer_delta_radians = outer_delta_radians;
-    
-    // Define the spinner's area.
-    this.area = new Area(x_min, y_min, x_max, y_max);
-
     this.outer_circle_radius = outer_circle_radius;
     
     this.inner_num_ridges = inner_num_ridges;
@@ -639,7 +630,7 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-        current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
+        current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                          -canvas.width/10, -canvas.height/10,
                                          Math.PI, 10, 100, 4, 5); 
     }
@@ -649,8 +640,43 @@ function onTimer() {
     redrawAll();
 }
 
+function spawn() {
+    var rand = Math.random();
+    // Create four values between 0 and 3
+    var choice = Math.floor(rand/0.25); 
+    var newSpinner;
+
+    if (choice === 0) {
+        newSpinner = new OrangeSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10,
+                                     Math.PI, 10, 100, 4, 5);
+    }
+    else if (choice === 1) {
+        newSpinner = new RedSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10,
+                                     Math.PI, 10, 100, 4, 5);
+    }
+    else if (choice === 2) {
+        newSpinner = new YellowSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10,
+                                     Math.PI, 10, 100, 4, 5);
+    }
+    else if (choice === 3) {
+        newSpinner = new GreenSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10,
+                                     Math.PI, 10, 100, 4, 5);
+    }
+    // alert('Choice is ' + choice);
+    // console.log(typeof(spinners_on_board));
+    // console.log(spinners_on_board);
+    // spinners_on_board = spinners_on_board.push(newSpinner);
+    // setTimeout(spawn, 1000);
+}
+
 function run() {
-    current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
+    spinners_on_board = new Array(0);
+    spawn();
+    current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
 
