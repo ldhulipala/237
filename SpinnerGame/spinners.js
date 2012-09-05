@@ -367,7 +367,99 @@ YellowSpinner.prototype.update = function(elapsed_ms) {
 }
 
 
-// ... And so on for green, blue, and purple spinners. 
+/************************************/
+/* Define the Green Spinner object */
+/************************************/
+function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
+                      inner_radius, orbit_radius) {
+
+    // Green Spinners are defined to have 12 orbiting circles, all of radius
+    // 5.
+    var num_orbiting_circles = 12;
+    var outer_circle_radius = 5; 
+
+    // Area bounds for the spinner.
+    var x_min = pos_x - orbit_radius - outer_circle_radius;
+    var y_min = pos_y - orbit_radius - outer_circle_radius;
+    var x_max = pos_x + orbit_radius + outer_circle_radius;
+    var y_max = pos_y + orbit_radius + outer_circle_radius; 
+
+    // Call the parent constructor.
+    Spinner.call(this, "green", pos_x, pos_y, vel_x, vel_y, rps, 
+                 inner_radius, orbit_radius, num_orbiting_circles, 
+                 outer_circle_radius);
+
+    // Define the spinner's area.
+    this.area = new Area(x_min, y_min, x_max, y_max);
+
+    this.num_orbiting_circles = num_orbiting_circles;
+    this.outer_circle_radius = outer_circle_radius;
+
+    // The amount that this.orbit_radius increases per second.
+    this.delta_radius = orbit_radius;
+
+    // Closure. Returns the amount of distance traveled from the starting
+    // point (pos_x, pos_y).
+    this.getDistTraveled = (function() {
+        var x = pos_x;
+        var y = pos_y;
+        return function() {
+            var dx = this.pos_x - x; // Change in x-position.
+            var dy = this.pos_y - y; // Change in y-position.
+            return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+        }
+    }());
+}
+
+// Set up inheritance, correct the constructor.
+GreenSpinner.prototype = new RedSpinner();
+GreenSpinner.prototype.constructor = GreenSpinner;
+
+GreenSpinner.prototype.update = function(elapsed_ms) {
+    var orbit_radius;
+    var outer_circle_radius;
+    var x_min;
+    var y_min;
+    var x_max;
+    var y_max;
+    var i;
+    var elapsed_secs;
+
+    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
+
+    if (this.getDistTraveled() > (Math.min(canvas.width, canvas.height)/2)) {
+        this.vel_x = 0;
+        this.vel_y = 0;
+        this.orbit_radius += (this.delta_radius / elapsed_secs);
+    }
+
+    orbit_radius = this.orbit_radius;
+    outer_circle_radius = this.outer_circle_radius;
+
+    // Calculate new boundaries
+    x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    y_max = this.pos_y + orbit_radius + outer_circle_radius;
+    i;
+
+    // Calculate new center of middle circle and angle of orbiting circles.
+    this.pos_x += this.vel_x * elapsed_secs;
+    this.pos_y += this.vel_y * elapsed_secs;
+    this.angle += (this.rps * elapsed_secs);
+    this.angle = this.angle % FULL_ROTATION; 
+
+    // Update the area of the spinner every time.
+    this.area.update(x_min, y_min, x_max, y_max);
+
+    for (i = 0; i < this.num_orbiting_circles; i++) {
+        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
+        this.outer_circle_angles[i] = 
+            this.outer_circle_angles[i] % (2*Math.PI);
+    }
+}
+
+// ... And so on for blue, and purple spinners. 
 
 function onMouseMove(event) {
     MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
@@ -397,9 +489,9 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10,
-                                     Math.PI, 10, 100, 4, 5);
+    current_spinner = new GreenSpinner(canvas.width, canvas.height, 
+                                        -canvas.width/10, -canvas.height/10,
+                                        Math.PI/2, 10, 100);
 
     canvas.setAttribute('tabindex','0');
     canvas.focus();
