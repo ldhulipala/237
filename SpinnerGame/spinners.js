@@ -579,6 +579,14 @@ function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 GreenSpinner.prototype = new RedSpinner();
 GreenSpinner.prototype.constructor = GreenSpinner;
 
+// A GreenSpinner is no longer active when its radius grows too large.
+GreenSpinner.prototype.isActive = function() {
+    if (this.orbit_radius > Math.max(canvas.width, canvas.height)) {
+        return false;
+    }
+    return true;
+}
+
 GreenSpinner.prototype.update = function(elapsed_ms) {
     var orbit_radius;
     var outer_circle_radius;
