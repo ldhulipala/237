@@ -52,15 +52,14 @@ var game = {
     },
 
     startGame : function() {
-        spawn(RedSpinner);
-
-        current_spinner = new GreenSpinner(canvas.width, canvas.height,
-                                        -canvas.width/10, -canvas.height/10, Math.PI);
+        spinners_on_board = [];
+        // Put an initial spinner on the board.
+        spawn();
 
         canvas.setAttribute('tabindex','0');
         canvas.focus();
         intervalId = setInterval(onTimer, timer_delay);
-        spawnIntervalId = setInterval(spawn, 5000);
+        spawnIntervalId = setInterval(spawn, 3000);
     }
 }
 
@@ -685,14 +684,6 @@ function getRandomizedSpinner(spinner_constructor) {
 
 
 function run() {
-    spinners_on_board = [];
-    // Put an initial spinner on the board.
-    spawn();
-
-    canvas.setAttribute('tabindex','0');
-    canvas.focus();
-    intervalId = setInterval(onTimer, timer_delay);
-    spawnIntervalId = setInterval(spawn, 3000);
     game.drawBackground();
 }
 
