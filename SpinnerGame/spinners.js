@@ -16,6 +16,8 @@ var MOUSE_Y;
 var game = {
     state : "Start",
     level : 0,
+    max_lives : 3,
+    lives : 3,
     score : 0,
     startWidth : 120,
     startHeight : 40,
@@ -28,13 +30,11 @@ var game = {
         s_right = canvas.width/2 + game.startWidth/2;
         s_top = canvas.height/2 - game.startHeight/2;
         s_bottom = canvas.height/2 + game.startHeight/2;
-        console.log(MOUSE_X,MOUSE_Y);
-        console.log(s_left,s_right,s_top,s_bottom);
 
         if ((MOUSE_X >= s_left) && (MOUSE_X <= s_right)) {
             if ((MOUSE_Y >= s_top) && (MOUSE_Y <= s_bottom)) {
                 game.startGame();
-                console.log("STarting game");
+                console.log("Starting game");
             }
         }
     },
@@ -53,6 +53,7 @@ var game = {
 
     startGame : function() {
         spinners_on_board = [];
+        canvas.addEventListener('mousemove', onMouseMove, false);
         // Put an initial spinner on the board.
         spawn();
 
@@ -60,13 +61,21 @@ var game = {
         canvas.focus();
         intervalId = setInterval(onTimer, timer_delay);
         spawnIntervalId = setInterval(spawn, 3000);
-    }
+    },
+
+    renderLives : function() {
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.font = 'Bold 15px Sans-Serif';
+        var the_text = "Lives = "+ game.lives;
+        ctx.fillText(the_text, 20,20);
+    },
 }
 
 // Draws the background. Currently, it draws a black background.
 function drawBackground() {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    game.renderLives();
 }
 
 // Draws a circle at (cx, cy) with a given radius and color.
@@ -598,7 +607,6 @@ function onMouseMove(event) {
         }
     }
 }
-canvas.addEventListener('mousemove', onMouseMove, false);
 
 function onKeyDown(event) {
     // r resets the game
@@ -633,7 +641,7 @@ function onTimer() {
 
 function spawn() {
     // Create four values between 0 and 3
-    var choice = Math.floor(Math.random()/0.25); 
+    var choice = Math.floor(Math.random()/0.25);
     var newSpinner;
     var constructor;
     if (choice === 0) {
@@ -674,7 +682,7 @@ function getRandomizedSpinner(spinner_constructor) {
     // Want spinner to head towards center
     if (start_x === canvas.width) {
         velocity_x = -1*velocity_x;
-    } 
+    }
     if (start_y === canvas.height) {
         velocity_y = -1*velocity_y;
     }
