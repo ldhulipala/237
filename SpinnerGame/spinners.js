@@ -242,6 +242,15 @@ OrangeSpinner.prototype.constructor = OrangeSpinner;
 var orange_delta_radius = 0.5;
 
 OrangeSpinner.prototype.update = function(elapsed_ms) {
+    var orbit_radius;
+    var outer_circle_radius;
+    var x_min;
+    var y_min;
+    var x_max;
+    var y_max;
+    var i;
+    var elapsed_secs;
+
     if (this.outer_circle_radius === 20) {
         orange_delta_radius = -0.5;
     }
@@ -249,15 +258,14 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {
         orange_delta_radius = 0.5;
     }
     this.outer_circle_radius += orange_delta_radius;
-    var orbit_radius = this.outer_circle_radius;
-    var outer_circle_radius = this.outer_circle_radius;
-    var x_min = this.pos_x - orbit_radius - outer_circle_radius;
-    var y_min = this.pos_y - orbit_radius - outer_circle_radius;
-    var x_max = this.pos_x + orbit_radius + outer_circle_radius;
-    var y_max = this.pos_y + orbit_radius + outer_circle_radius;
-    var i;
+    orbit_radius = this.outer_circle_radius;
+    outer_circle_radius = this.outer_circle_radius;
+    x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    y_max = this.pos_y + orbit_radius + outer_circle_radius;
 
-    var elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
+    elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
 
     this.pos_x += this.vel_x * elapsed_secs;
     this.pos_y += this.vel_y * elapsed_secs;
@@ -284,15 +292,15 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     // Orange Spinners are defined to have 6 orbiting circles, all of which
     // fluctuate between radius 5 and 10.
     var num_orbiting_circles = 6;
-    var outer_circle_radius = 5;
-
-    YELLOW_INITIAL_ORBIT_RADIUS = orbit_radius;
+    var outer_circle_radius = 5; 
 
     // Area bounds for the spinner.
     var x_min = pos_x - orbit_radius - outer_circle_radius;
     var y_min = pos_y - orbit_radius - outer_circle_radius;
     var x_max = pos_x + orbit_radius + outer_circle_radius;
     var y_max = pos_y + orbit_radius + outer_circle_radius; 
+
+    YELLOW_INITIAL_ORBIT_RADIUS = orbit_radius;
 
     // Call the parent constructor.
     Spinner.call(this, "yellow", pos_x, pos_y, vel_x, vel_y, rps, 
@@ -310,28 +318,40 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 YellowSpinner.prototype = new RedSpinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
 
-YellowSpinner.prototype.update = function(elapsed_ms) {
-    console.log('orbit radius ' + this.orbit_radius);
-    console.log('YELLOW ' + YELLOW_INITIAL_ORBIT_RADIUS);
-    console.log('delta ' + yellow_delta_radius);
 
+YellowSpinner.prototype.update = function(elapsed_ms) {
+    var orbit_radius;
+    var outer_circle_radius;
+    var x_min;
+    var y_min;
+    var x_max;
+    var y_max;
+    var i;
+    var elapsed_secs;
+
+    // Start decreasing orbit radius
     if (this.orbit_radius === 2*YELLOW_INITIAL_ORBIT_RADIUS) {
         yellow_delta_radius = -0.5;
     }
+    // Start increasing orbit radius
     if (this.orbit_radius === YELLOW_INITIAL_ORBIT_RADIUS) {
         yellow_delta_radius = 0.5;
     }
+
     this.orbit_radius += yellow_delta_radius;
-    var orbit_radius = this.outer_circle_radius;
-    var outer_circle_radius = this.outer_circle_radius;
-    var x_min = this.pos_x - orbit_radius - outer_circle_radius;
-    var y_min = this.pos_y - orbit_radius - outer_circle_radius;
-    var x_max = this.pos_x + orbit_radius + outer_circle_radius;
-    var y_max = this.pos_y + orbit_radius + outer_circle_radius;
-    var i;
+    orbit_radius = this.orbit_radius;
+    outer_circle_radius = this.outer_circle_radius;
 
-    var elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
+    // Calculate new boundaries
+    x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    y_max = this.pos_y + orbit_radius + outer_circle_radius;
+    i;
 
+    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
+
+    // Calculate new center of middle circle and angle of orbiting circles.
     this.pos_x += this.vel_x * elapsed_secs;
     this.pos_y += this.vel_y * elapsed_secs;
     this.angle += (this.rps * elapsed_secs);
@@ -380,6 +400,7 @@ function run() {
     current_spinner = new YellowSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
+
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
