@@ -322,7 +322,7 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     var outer_num_ridges = 3; 
 
     var inner_radius = 4;
-    var orbit_radius = 100;
+    var orbit_radius = 50;
 
     // Call the parent constructor.
     Spinner.call(this, "orange", pos_x, pos_y, vel_x, vel_y, rps, 
@@ -382,14 +382,14 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     // distance between the inner circle and orbit circle  
     // increases over time. 
     var num_orbiting_circles = 6;
-    var outer_circle_radius = 5; 
+    var outer_circle_radius = 10; 
 
     // Yellow spinners do not have anything unique about their shape.
     var inner_num_ridges = 0;
     var outer_num_ridges = 0; 
 
-    var inner_radius = 10;
-    var orbit_radius = 100;
+    var inner_radius = 20;
+    var orbit_radius = 50;
 
     // We need to remember the initial radius, so we know the max and min
     // size of the orbitting radiuses.
@@ -434,13 +434,13 @@ function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     // Green Spinners are defined to have 12 orbiting circles, all of radius
     // 5.
     var num_orbiting_circles = 12;
-    var outer_circle_radius = 5; 
+    var outer_circle_radius = 10; 
 
      // Green spinners do not have any ridges.
     var inner_num_ridges = 0;
     var outer_num_ridges = 0; 
 
-    var inner_radius = 10;
+    var inner_radius = 20;
     var orbit_radius = 100;
 
     // Call the parent constructor.
@@ -523,10 +523,15 @@ GreenSpinner.prototype.update = function(elapsed_ms) {
 // ... And so on for blue, and purple spinners. 
 
 function onMouseMove(event) {
+    var i;
+    var spinner;
     MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
     MOUSE_Y = event.pageY - canvas.offsetTop;
-    if (current_spinner.detectCollision(inShape) === true) {
-        window.clearInterval(intervalId);
+    for (i = 0; i < spinners_on_board.length; i++) {
+        spinner = spinners_on_board[i];
+        if (spinner.detectCollision(inShape) === true) {
+            window.clearInterval(intervalId);
+        }
     }
 }
 canvas.addEventListener('mousemove', onMouseMove, false);
@@ -537,12 +542,15 @@ function redrawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     
-    console.log('a ' + spinners_on_board);
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
-        console.log(typeof(spinner));
-        spinner.draw(ctx);
-        spinner.update(timer_delay);
+        if (spinner.isActive() === true) {
+            spinner.draw(ctx);
+            spinner.update(timer_delay);
+        }
+        else {
+            spinners_on_board.splice(i,1)
+        }
     }
 }
 
