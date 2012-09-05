@@ -61,7 +61,22 @@ var game = {
         canvas.focus();
         intervalId = setInterval(onTimer, timer_delay);
         spawnIntervalId = setInterval(spawn, 3000);
+        game.lives = game.max_lives;
     },
+
+    endGame : function() {
+        window.clearInterval(intervalId);
+        game.drawBackground();
+    },
+
+    removeLife : function () {
+        if (game.lives == 0) {
+            game.endGame();
+        }
+        else {
+            game.lives -= 1;
+        }
+   },
 
     renderLives : function() {
         ctx.fillStyle = "rgba(255,255,255,0.8)";
@@ -603,7 +618,7 @@ function onMouseMove(event) {
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
         if (spinner.detectCollision(inShape) === true) {
-            window.clearInterval(intervalId);
+            game.removeLife();
         }
     }
 }
