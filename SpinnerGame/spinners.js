@@ -6,7 +6,6 @@ var spawnIntervalId;
 var timer_delay = 10;
 
 var spinners_on_board;
-var current_spinner;
 
 var FULL_ROTATION = 2*Math.PI; // Number of radians in a circle.
 var CANVAS_AREA = new Area(0, 0, canvas.width, canvas.height);
@@ -53,45 +52,6 @@ function detectAreaOverlap(area0, area1) {
         }
     }
     return false;
-}
-
-function spawn(constructor) {
-    var rand = Math.random();
-    // Create four values between 0 and 3
-    var choice = Math.floor(rand/0.25); 
-    var newSpinner;
-    newSpinner = getRandomizedSpinner(constructor);
-    spinners_on_board.push(newSpinner);
-    return;
-}
-
-function getRandomizedSpinner(spinner_constructor) {
-    var start_x;
-    var start_y;
-    var index;
-    var spinner;
-    var start_positions_x = [0, canvas.width];
-    var start_positions_y = [0, canvas.height];
-    // Velocity is in range [canvas.size/10, canvas.size/4]
-    var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
-    var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
-    // RPS is in range [Pi/2, 3Pi/2]
-    var rps = Math.PI/2 + Math.random()*Math.PI/2;
-
-    index = Math.floor(Math.random() + 0.5);
-    start_x = start_positions_x[index];
-    index = Math.floor(Math.random() + 0.5);
-    start_y = start_positions_y[index];
-
-    // Want spinner to head towards center
-    if (start_x === canvas.width) {
-        velocity_x = -1*velocity_x;
-    } 
-    if (start_y === canvas.height) {
-        velocity_y = -1*velocity_y;
-    }
-    spinner = new spinner_constructor(start_x, start_y, velocity_x, velocity_y, rps)
-    return spinner;
 }
 
 // Abstract Spinner object. 'color' is either 'red', 'orange', 'yellow',
@@ -160,7 +120,6 @@ function Spinner(color, pos_x, pos_y, vel_x, vel_y, rps, inner_radius, orbit_rad
 Spinner.prototype.isActive = function() {
     return detectAreaOverlap(this.area, CANVAS_AREA);
 }
-
 
 Spinner.prototype.updateSpinners = function(elapsed_ms) {
     var orbit_radius;
@@ -281,11 +240,28 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
     var inner_delta_radians = this.inner_delta_radians;
     var outer_ridge_angles;
 
+    var inner_radius_multiple;
+    var outer_radius_multiple;
+
     ctx.save();
     ctx.translate(this.pos_x, this.pos_y);
 
+    if (this.inner_num_ridges === 0) {
+        inner_radius_multiple = 1;
+    }
+    else {
+        inner_radius_multiple = 0.5;
+    }
+
+    if (this.outer_num_ridges === 0) {
+        outer_radius_multiple = 1;
+    }
+    else {
+        outer_radius_multiple = 0.5
+    }
+
     // Draw the inner circle
-    drawCircle(ctx, 0, 0, 0.5*this.inner_radius, this.color);
+    drawCircle(ctx, 0, 0, inner_radius_multiple*this.inner_radius, this.color);
     // Draw ridges for inner circles
     for (i = 0; i < this.inner_num_ridges; i++) {
         radian_angle = this.inner_ridge_angles[i];
@@ -296,7 +272,7 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
     for (i = 0; i < this.num_orbiting_circles; i++) {
         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
         y_coord = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
-        drawCircle(ctx, x_coord, y_coord, 0.5*this.outer_circle_radius, 
+        drawCircle(ctx, x_coord, y_coord, outer_radius_multiple*this.outer_circle_radius, 
                    this.color);
 
         outer_ridge_angles = this.outer_ridge_angles[i];
@@ -361,7 +337,7 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     var inner_num_ridges = 4;
     var outer_num_ridges = 3; 
 
-    var inner_radius = 4;
+    var inner_radius = 10;
     var orbit_radius = 50;
 
     // Call the parent constructor.
@@ -444,8 +420,6 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
 // Set up inheritance, correct the constructor.
 YellowSpinner.prototype = new RedSpinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
-
-
 
 YellowSpinner.prototype.update = function(elapsed_ms) {
     // Start decreasing orbit radius
@@ -607,19 +581,67 @@ function onTimer() {
     redrawAll();
 }
 
+function spawn() {
+    // Create four values between 0 and 3
+    var choice = Math.floor(Math.random()/0.25); 
+    var newSpinner;
+    var constructor;
+    if (choice === 0) {
+        constructor = OrangeSpinner;
+    }
+    else if (choice === 1) {
+        constructor = RedSpinner;
+    }
+    else if (choice === 2) {
+        constructor = YellowSpinner;
+    }
+    else if (choice === 3) {
+        constructor = GreenSpinner;
+    }
+    newSpinner = getRandomizedSpinner(constructor);
+    spinners_on_board.push(newSpinner);
+    return;
+}
+
+function getRandomizedSpinner(spinner_constructor) {
+    var start_x;
+    var start_y;
+    var index;
+    var spinner;
+    var start_positions_x = [0, canvas.width];
+    var start_positions_y = [0, canvas.height];
+    // Velocity is in range [canvas.size/10, canvas.size/4]
+    var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
+    var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
+    // RPS is in range [Pi/2, 3Pi/2]
+    var rps = Math.PI/2 + Math.random()*Math.PI/2;
+
+    index = Math.floor(Math.random() + 0.5);
+    start_x = start_positions_x[index];
+    index = Math.floor(Math.random() + 0.5);
+    start_y = start_positions_y[index];
+
+    // Want spinner to head towards center
+    if (start_x === canvas.width) {
+        velocity_x = -1*velocity_x;
+    } 
+    if (start_y === canvas.height) {
+        velocity_y = -1*velocity_y;
+    }
+    spinner = new spinner_constructor(start_x, start_y, velocity_x, velocity_y, rps)
+    return spinner;
+}
+
 
 function run() {
     spinners_on_board = [];
     // Put an initial spinner on the board.
-    spawn(RedSpinner);
-
-    current_spinner = new GreenSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/10, -canvas.height/10, Math.PI);
+    spawn();
 
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
-    spawnIntervalId = setInterval(spawn, 5000);
+    spawnIntervalId = setInterval(spawn, 3000);
 }
 
 run();
