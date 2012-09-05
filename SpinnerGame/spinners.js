@@ -37,7 +37,7 @@ function Area(x_min, y_min, x_max, y_max) {
 }
 
 Area.prototype.update = function(x_min, y_min, x_max, y_max) {
-    this.x_min = x_min; 
+    this.x_min = x_min;
     this.y_min = y_min;
     this.x_max = x_max;
     this.y_max = y_max;
@@ -64,6 +64,11 @@ function Spinner(color, pos_x, pos_y, vel_x, vel_y, rps, inner_radius, orbit_rad
     var i;
     var j;
 
+    var x_min = pos_x - orbit_radius - outer_circle_radius;
+    var y_min = pos_y - orbit_radius - outer_circle_radius;
+    var x_max = pos_x + orbit_radius + outer_circle_radius;
+    var y_max = pos_y + orbit_radius + outer_circle_radius;
+
     this.pos_x = pos_x; // x-position.
     this.pos_y = pos_y; // y-position.
     this.vel_x = vel_x; // x-velocity in pixels per second.
@@ -83,8 +88,7 @@ function Spinner(color, pos_x, pos_y, vel_x, vel_y, rps, inner_radius, orbit_rad
 
     // area - the area the spinner occupies, relative to the original 
     // canvas layer.
-    this.area = new Area(pos_x - inner_radius, pos_y - inner_radius, 
-                         pos_x + inner_radius, pos_y + inner_radius);
+    this.area = new Area(x_min, y_min, x_max, y_max);
 
     delta_radians = 2*Math.PI/num_orbiting_circles;
 
@@ -459,19 +463,11 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var num_orbiting_circles = 6;
     var outer_circle_radius = 5; 
 
-    // Area bounds for the spinner.
-    var x_min = pos_x - orbit_radius - outer_circle_radius;
-    var y_min = pos_y - orbit_radius - outer_circle_radius;
-    var x_max = pos_x + orbit_radius + outer_circle_radius;
-    var y_max = pos_y + orbit_radius + outer_circle_radius; 
-
     YELLOW_INITIAL_ORBIT_RADIUS = orbit_radius;
 
     // Call the parent constructor.
     Spinner.call(this, "yellow", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius, 0, 0);
-    // Define the spinner's area.
-    this.area = new Area(x_min, y_min, x_max, y_max);
 
     // Orange Spinners are defined to have 6 orbiting circles, all of which
     // fluctuate between radius 5 and 10.
@@ -646,7 +642,7 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-        current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
+        current_spinner = new YellowSpinner(canvas.width, canvas.height, 
                                          -canvas.width/10, -canvas.height/10,
                                          Math.PI, 10, 100, 4, 5); 
     }
@@ -657,7 +653,7 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
+    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
 
