@@ -355,40 +355,123 @@ YellowSpinner.prototype.draw = function(ctx) {
 }
 
 
-YellowSpinner.prototype.detectCollision = function() {
-    var mouse_area = new Area(MOUSE_X - MOUSE_RADIUS, MOUSE_Y - MOUSE_RADIUS,
-                              MOUSE_X + MOUSE_RADIUS, MOUSE_Y + MOUSE_RADIUS);
+YellowSpinner.prototype.detectCollision = function(x, y) {
+    var mouse_angle = 0;
+    var mouse_radius;
+    var mouse_area = new Area(x - MOUSE_RADIUS, y - MOUSE_RADIUS,
+                              x + MOUSE_RADIUS, y + MOUSE_RADIUS);
+    // Rectangle areas.
+    var top_rect;
+    var bottom_rect;
+    var right_rect;
+    var left_rect;
+
+    var vert_length; // Length of the vertical rectangles.
+    var horz_length; // Length of the horizontal rectangles.
+
     if (detectAreaOverlap(this.area, mouse_area) === false) {
         return false;
     }
     
     // Detect overlap with the inner circle. 
-    if (detectCircleOverlap(MOUSE_X, MOUSE_Y, MOUSE_RADIUS, this.pos_x, this.pos_y,
+    if (detectCircleOverlap(x, y, MOUSE_RADIUS, this.pos_x, this.pos_y,
                             this.inner_radius)) {
         return true;
     }
     
+    // Translate the mouse coordinates.
+    x = x - this.pos_x;
+    y = y - this.pos_y;
+
+    mouse_angle = Math.atan(x/y);
+
     // Detect overlap with the orbiting rectangles.
+    // Get the quadrant the mouse is in.
+    if (x >= 0) {
+        if (y >= 0) {
+            //quadrant 1            
+        } else {
+            // quadrant 4
+            mouse_angle = FULL_ROTATION - mouse_angle;
+        }
+    } else {
+        if (y >= 0) {
+            // quadrant 2
+            mouse_angle = (FULL_ROTATION/2) - mouse_angle;
+        } else {
+            // quadrant 3
+            mouse_angle = (FULL_ROTATION/2) + mouse_angle;
+        }
+    }
+
+    mouse_angle += this.angle;
+    mouse_radius = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    
+    x = mouse_radius * Math.cos(mouse_angle);
+    y = mouse_radius * Math.sin(mouse_angle);
+
+    mouse_area.update(x - MOUSE_RADIUS, y - MOUSE_RADIUS,
+                      x + MOUSE_RADIUS, y + MOUSE_RADIUS);
+
+
+    if (this.angle < Math.PI) {
+        vert_length = this.orbit_radius * (this.angle / Math.PI);
+    } else {
+        vert_length = this.orbit_radius * (2 - (this.angle / Math.PI));
+    }
+
+    horz_length = this.orbit_radius - vert_length;
+
+    // Update the top rectangle.
+    top_rect_area = 
+        new Area(-horz_length, 
+                 -this.orbit_radius - this.orbit_rect_half_width,
+                 -horz_length + (2 * horz_length),
+                 -this.orbit_radius - this.orbit_rect_half_width, 
+                 + (2 * this.orbit_rect_half_width));
+
+    if (detectAreaOverlap(mouse_area, top_rect_area)) {
+        return true;
+    }
+
+    // Update the bottom rectangle.
+    bottom_rect_area = 
+        new Area(-horz_length, 
+                 this.orbit_radius - this.orbit_rect_half_width,
+                 -horz_length + (2 * horz_length),
+                 this.orbit_radius - this.orbit_rect_half_width, 
+                 + (2 * this.orbit_rect_half_width));
+
+    if (detectAreaOverlap(mouse_area, bottom_rect_area)) {
+        return true;
+    }
+
+    // Update the right rectangle.
+    right_rect_area = 
+        new Area(this.orbit_radius - this.orbit_rect_half_width, 
+                 -vert_length,
+                 this.orbit_radius - this.orbit_rect_half_width,
+                 + (2 * this.orbit_rect_half_width), 
+                 -vert_length + (2 * vert_length));
+
+    if (detectAreaOverlap(mouse_area, right_rect_area)) {
+        return true;
+    }
+
+    // Update the left rectangle.
+    left_rect_area = 
+        new Area(-this.orbit_radius - this.orbit_rect_half_width, 
+                 -vert_length,
+                 -this.orbit_radius - this.orbit_rect_half_width,
+                 + (2 * this.orbit_rect_half_width), 
+                 -vert_length + (2 * vert_length));  
+
+    if (detectAreaOverlap(mouse_area, left_rect_area)) {
+        return true;
+    }
+    
+    return false;
 } 
-
-YellowSpinner.prototype.update = function(elapsed_ms) {
-    var orbit_radius = this.orbit_radius;
-    var orbit_rect_half_width = this.orbit_rect_half_width;
-    var x_min = this.pos_x - orbit_radius - orbit_rect_half_width;
-    var y_min = this.pos_y - orbit_radius - orbit_rect_half_width;
-    var x_max = this.pos_x + orbit_radius + orbit_rect_half_width;
-    var y_max = this.pos_y + orbit_radius + orbit_rect_half_width;
-
-    var elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
-
-    this.pos_x += this.vel_x * elapsed_secs;
-    this.pos_y += this.vel_y * elapsed_secs;
-    this.angle += (this.rps * elapsed_secs);
-    this.angle = this.angle % FULL_ROTATION; 
-
-    // Update the area of the spinner every time.
-    this.area.update(x_min, y_min, x_max, y_max);
-}
 
 
 // ... And so on for green, blue, and purple spinners. 
@@ -422,7 +505,7 @@ function onTimer() {
 
 function run() {
    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
-                                        -canvas.width/8, -canvas.height/8,
+                                        -canvas.width/4, -canvas.height/4,
                                         Math.PI/2, 10, 100);
     canvas.setAttribute('tabindex','0');
     canvas.focus();
