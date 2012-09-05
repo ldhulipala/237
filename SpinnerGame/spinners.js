@@ -55,6 +55,45 @@ function detectAreaOverlap(area0, area1) {
     return false;
 }
 
+function spawn(constructor) {
+    var rand = Math.random();
+    // Create four values between 0 and 3
+    var choice = Math.floor(rand/0.25); 
+    var newSpinner;
+    newSpinner = getRandomizedSpinner(constructor);
+    spinners_on_board.push(newSpinner);
+    return;
+}
+
+function getRandomizedSpinner(spinner_constructor) {
+    var start_x;
+    var start_y;
+    var index;
+    var spinner;
+    var start_positions_x = [0, canvas.width];
+    var start_positions_y = [0, canvas.height];
+    // Velocity is in range [canvas.size/10, canvas.size/4]
+    var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
+    var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
+    // RPS is in range [Pi/2, 3Pi/2]
+    var rps = Math.PI/2 + Math.random()*Math.PI/2;
+
+    index = Math.floor(Math.random() + 0.5);
+    start_x = start_positions_x[index];
+    index = Math.floor(Math.random() + 0.5);
+    start_y = start_positions_y[index];
+
+    // Want spinner to head towards center
+    if (start_x === canvas.width) {
+        velocity_x = -1*velocity_x;
+    } 
+    if (start_y === canvas.height) {
+        velocity_y = -1*velocity_y;
+    }
+    spinner = new spinner_constructor(start_x, start_y, velocity_x, velocity_y, rps)
+    return spinner;
+}
+
 // Abstract Spinner object. 'color' is either 'red', 'orange', 'yellow',
 // 'green', 'blue', or 'purple'.
 function Spinner(color, pos_x, pos_y, vel_x, vel_y, rps, inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius,
@@ -121,6 +160,7 @@ function Spinner(color, pos_x, pos_y, vel_x, vel_y, rps, inner_radius, orbit_rad
 Spinner.prototype.isActive = function() {
     return detectAreaOverlap(this.area, CANVAS_AREA);
 }
+
 
 Spinner.prototype.updateSpinners = function(elapsed_ms) {
     var orbit_radius;
@@ -567,63 +607,11 @@ function onTimer() {
     redrawAll();
 }
 
-function spawn() {
-    var rand = Math.random();
-    // Create four values between 0 and 3
-    var choice = Math.floor(rand/0.25); 
-    var newSpinner;
-    var constructor;
-    console.log('HERE');
-    if (choice === 0) {
-        constructor = OrangeSpinner;
-    }
-    else if (choice === 1) {
-        constructor = RedSpinner;
-    }
-    else if (choice === 2) {
-        constructor = YellowSpinner;
-    }
-    else if (choice === 3) {
-        constructor = GreenSpinner;
-    }
-    newSpinner = getRandomizedSpinner(constructor);
-    spinners_on_board.push(newSpinner);
-    return;
-}
-
-function getRandomizedSpinner(spinner_constructor) {
-    var start_x;
-    var start_y;
-    var index;
-    var spinner;
-    var start_positions_x = [0, canvas.width];
-    var start_positions_y = [0, canvas.height];
-    // Velocity is in range [canvas.size/10, canvas.size/4]
-    var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
-    var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
-    // RPS is in range [Pi/2, 3Pi/2]
-    var rps = Math.PI/2 + Math.random()*Math.PI/2;
-
-    index = Math.floor(Math.random() + 0.5);
-    start_x = start_positions_x[index];
-    index = Math.floor(Math.random() + 0.5);
-    start_y = start_positions_y[index];
-
-    if (start_x === canvas.width) {
-        velocity_x = -1*velocity_x;
-    } 
-    if (start_y === canvas.height) {
-        velocity_y = -1*velocity_y;
-    }
-    spinner = new spinner_constructor(start_x, start_y, velocity_x, velocity_y, rps)
-    return spinner;
-}
-
 
 function run() {
     spinners_on_board = [];
     // Put an initial spinner on the board.
-    spawn();
+    spawn(RedSpinner);
 
     current_spinner = new GreenSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10, Math.PI);
