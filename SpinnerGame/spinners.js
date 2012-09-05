@@ -239,35 +239,14 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 OrangeSpinner.prototype = new RedSpinner();
 OrangeSpinner.prototype.constructor = OrangeSpinner;
 
-// // Redefine methods of the parent.
-// OrangeSpinner.prototype.draw = function(ctx) {
-//     var i;
-//     var x_coord; // x-position of the current outer circle to draw.
-//     var y_coord; // y-position of the current outer circle to draw.
-
-//     ctx.save();
-//     ctx.translate(this.pos_x, this.pos_y);
-
-//     // Draw the inner circle
-//     drawCircle(ctx, 0, 0, this.inner_radius, this.color);
-
-//     for (i = 0; i < this.num_orbiting_circles; i++) {
-//         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
-//         y_coord = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
-//         drawCircle(ctx, x_coord, y_coord, this.outer_circle_radius, 
-//                    this.color);
-//     }
-//     ctx.restore();
-// }
-// OrangeSpinner.prototype.detectCollision = function() {} 
-var orange_delta_radius = 1;
+var orange_delta_radius = 0.5;
 
 OrangeSpinner.prototype.update = function(elapsed_ms) {
-    if (this.outer_circle_radius === 10) {
-        orange_delta_radius = -1;
+    if (this.outer_circle_radius === 20) {
+        orange_delta_radius = -0.5;
     }
     if (this.outer_circle_radius === 1) {
-        orange_delta_radius = 1;
+        orange_delta_radius = 0.5;
     }
     this.outer_circle_radius += orange_delta_radius;
     var orbit_radius = this.outer_circle_radius;
@@ -294,90 +273,62 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {
     }
 }
 
-
+var YELLOW_INITIAL_ORBIT_RADIUS;
+var yellow_delta_radius = 0.5;
 /************************************/
 /* Define the Yellow Spinner object */
 /************************************/
 function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
                        inner_radius, orbit_radius) {
+
+    // Orange Spinners are defined to have 6 orbiting circles, all of which
+    // fluctuate between radius 5 and 10.
+    var num_orbiting_circles = 6;
+    var outer_circle_radius = 5;
+
+    YELLOW_INITIAL_ORBIT_RADIUS = orbit_radius;
+
+    // Area bounds for the spinner.
+    var x_min = pos_x - orbit_radius - outer_circle_radius;
+    var y_min = pos_y - orbit_radius - outer_circle_radius;
+    var x_max = pos_x + orbit_radius + outer_circle_radius;
+    var y_max = pos_y + orbit_radius + outer_circle_radius; 
+
     // Call the parent constructor.
     Spinner.call(this, "yellow", pos_x, pos_y, vel_x, vel_y, rps, 
-                 inner_radius, orbit_radius, 0, 0);
-    this.orbit_rect_half_width = 2;
+                 inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius);
+    // Define the spinner's area.
+    this.area = new Area(x_min, y_min, x_max, y_max);
+
+    // Orange Spinners are defined to have 6 orbiting circles, all of which
+    // fluctuate between radius 5 and 10.
+    this.num_orbiting_circles = num_orbiting_circles;
+    this.outer_circle_radius = outer_circle_radius;
 }
 
 // Set up inheritance, correct the constructor.
-YellowSpinner.prototype = new Spinner();
+YellowSpinner.prototype = new RedSpinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
 
-// Redefine methods of the parent.
-YellowSpinner.prototype.draw = function(ctx) {
-    var vert_length; // Length of the vertical rectangles.
-    var horz_length; // Length of the horizontal rectangles.
-
-    if (this.angle < Math.PI) {
-        vert_length = this.orbit_radius * (this.angle / Math.PI);
-    } else {
-        vert_length = this.orbit_radius * (2 - (this.angle / Math.PI));
-    }
-
-    horz_length = this.orbit_radius - vert_length;
-    
-    ctx.save();
-    ctx.translate(this.pos_x, this.pos_y);
-    ctx.rotate(this.angle);
-    ctx.fillStyle = this.color;
-
-    // Draw the inner circle
-    drawCircle(ctx, 0, 0, this.inner_radius, this.color);
-
-    // Draw the top rectangle.
-    ctx.fillRect(-horz_length, 
-                 -this.orbit_radius - this.orbit_rect_half_width,
-                 2 * horz_length, 2 * this.orbit_rect_half_width);
-
-    // Draw the bottom rectangle.
-    ctx.fillRect(-horz_length, 
-                 this.orbit_radius - this.orbit_rect_half_width,
-                 2 * horz_length, 2 *  this.orbit_rect_half_width);
-
-    // Draw the right rectangle.
-    ctx.fillRect(this.orbit_radius - this.orbit_rect_half_width, 
-                 -vert_length,
-                 2 *  this.orbit_rect_half_width, 2 * vert_length);
-
-    // Draw the left rectangle.
-    ctx.fillRect(-this.orbit_radius - this.orbit_rect_half_width, 
-                 -vert_length,
-                 2 *  this.orbit_rect_half_width, 2 * vert_length);
-
-    ctx.restore();
-}
-
-
-YellowSpinner.prototype.detectCollision = function() {
-    var mouse_area = new Area(MOUSE_X - MOUSE_RADIUS, MOUSE_Y - MOUSE_RADIUS,
-                              MOUSE_X + MOUSE_RADIUS, MOUSE_Y + MOUSE_RADIUS);
-    if (detectAreaOverlap(this.area, mouse_area) === false) {
-        return false;
-    }
-    
-    // Detect overlap with the inner circle. 
-    if (detectCircleOverlap(MOUSE_X, MOUSE_Y, MOUSE_RADIUS, this.pos_x, this.pos_y,
-                            this.inner_radius)) {
-        return true;
-    }
-    
-    // Detect overlap with the orbiting rectangles.
-} 
-
 YellowSpinner.prototype.update = function(elapsed_ms) {
-    var orbit_radius = this.orbit_radius;
-    var orbit_rect_half_width = this.orbit_rect_half_width;
-    var x_min = this.pos_x - orbit_radius - orbit_rect_half_width;
-    var y_min = this.pos_y - orbit_radius - orbit_rect_half_width;
-    var x_max = this.pos_x + orbit_radius + orbit_rect_half_width;
-    var y_max = this.pos_y + orbit_radius + orbit_rect_half_width;
+    console.log('orbit radius ' + this.orbit_radius);
+    console.log('YELLOW ' + YELLOW_INITIAL_ORBIT_RADIUS);
+    console.log('delta ' + yellow_delta_radius);
+
+    if (this.orbit_radius === 2*YELLOW_INITIAL_ORBIT_RADIUS) {
+        yellow_delta_radius = -0.5;
+    }
+    if (this.orbit_radius === YELLOW_INITIAL_ORBIT_RADIUS) {
+        yellow_delta_radius = 0.5;
+    }
+    this.orbit_radius += yellow_delta_radius;
+    var orbit_radius = this.outer_circle_radius;
+    var outer_circle_radius = this.outer_circle_radius;
+    var x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    var y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    var x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    var y_max = this.pos_y + orbit_radius + outer_circle_radius;
+    var i;
 
     var elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
 
@@ -388,6 +339,11 @@ YellowSpinner.prototype.update = function(elapsed_ms) {
 
     // Update the area of the spinner every time.
     this.area.update(x_min, y_min, x_max, y_max);
+
+    for (i = 0; i < this.num_orbiting_circles; i++) {
+        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
+        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
+    }
 }
 
 
@@ -410,9 +366,9 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-       current_spinner = new YellowSpinner(canvas.width, canvas.height, 
-                                        -canvas.width/8, -canvas.height/8,
-                                        Math.PI/2, 10, 100);
+        current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+                                         -canvas.width/10, -canvas.height/10,
+                                         Math.PI, 10, 100, 4, 5); 
     }
 }
 
@@ -421,9 +377,9 @@ function onTimer() {
 }
 
 function run() {
-   current_spinner = new YellowSpinner(canvas.width, canvas.height, 
-                                        -canvas.width/8, -canvas.height/8,
-                                        Math.PI/2, 10, 100);
+    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+                                     -canvas.width/10, -canvas.height/10,
+                                     Math.PI, 10, 100, 4, 5);
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
