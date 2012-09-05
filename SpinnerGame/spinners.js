@@ -112,8 +112,10 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var num_orbiting_circles = 4;
     var outer_circle_radius = 5;
 
-    var num_ridges = 5;
-    var delta_radians = (2*Math.PI)/(2*num_ridges);
+    var inner_num_ridges = 5;
+    var outer_num_ridges = 4;
+    var inner_delta_radians = (2*Math.PI)/(2*inner_num_ridges);
+    var outer_delta_radians = (2*Math.PI)/(2*outer_num_ridges);
     var radian_angle = 0;
 
     // Area bounds for the spinner.
@@ -123,6 +125,7 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var y_max = pos_y + orbit_radius + outer_circle_radius; 
 
     var i;
+    var j;
 
     // Call the parent constructor.
     Spinner.call(this, "red", pos_x, pos_y, vel_x, vel_y, rps, 
@@ -132,16 +135,33 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     // have radius 5.
     this.num_orbiting_circles = num_orbiting_circles;
     this.outer_circle_radius = outer_circle_radius;
-    this.delta_radians = delta_radians;
+    this.inner_delta_radians = inner_delta_radians;
+    this.outer_delta_radians = outer_delta_radians;
     
     // Define the spinner's area.
     this.area = new Area(x_min, y_min, x_max, y_max);
-    this.num_ridges = num_ridges;
-    this.ridge_angles = new Array(num_ridges);
 
-    for (i = 0; i < num_ridges; i++) {
-        this.ridge_angles[i] = radian_angle;
-        radian_angle += 2*delta_radians;
+    this.outer_circle_radius = outer_circle_radius;
+    
+    this.inner_num_ridges = inner_num_ridges;
+    this.outer_num_ridges = outer_num_ridges;
+
+    this.inner_ridge_angles = new Array(inner_num_ridges);
+    this.outer_ridge_angles = new Array(num_orbiting_circles);
+
+    for (i = 0; i < inner_num_ridges; i++) {
+        this.inner_ridge_angles[i] = radian_angle;
+        radian_angle += 2*inner_delta_radians;
+    }
+
+    radian_angle = 0;
+
+    for (i = 0; i < num_orbiting_circles; i++) {
+        this.outer_ridge_angles[i] = new Array(outer_num_ridges);
+        for (j = 0; j < outer_num_ridges; j++) {
+            this.outer_ridge_angles[i][j] = radian_angle + i*outer_delta_radians;
+            radian_angle += 2*outer_delta_radians;
+        }
     }
 }
 
@@ -176,27 +196,42 @@ function drawArc(ctx, center_x, center_y, start_angle, end_angle, radius, color)
 
 RedSpinner.prototype.draw = function(ctx) {
     var i;
+    var j;
     var x_coord; // x-position of the current outer circle to draw.
     var y_coord; // y-position of the current outer circle to draw.
     var radian_angle;
-    var delta_radians = this.delta_radians;
+    var inner_delta_radians = this.inner_delta_radians;
+    var outer_ridge_angles;
 
     ctx.save();
     ctx.translate(this.pos_x, this.pos_y);
 
     // Draw the inner circle
     drawCircle(ctx, 0, 0, this.inner_radius, this.color);
-    for (i = 0; i < this.num_ridges; i++) {
-        radian_angle = this.ridge_angles[i];
-        drawArc(ctx, 0, 0, radian_angle, radian_angle + delta_radians, this.inner_radius+2, this.color);
+    // Draw ridges for inner circles
+    for (i = 0; i < this.inner_num_ridges; i++) {
+        radian_angle = this.inner_ridge_angles[i];
+        drawArc(ctx, 0, 0, radian_angle, radian_angle + inner_delta_radians, this.inner_radius+2, this.color);
     }
 
+    // Draw the outer circle
     for (i = 0; i < this.num_orbiting_circles; i++) {
         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
         y_coord = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
         drawCircle(ctx, x_coord, y_coord, this.outer_circle_radius, 
                    this.color);
+
+        outer_ridge_angles = this.outer_ridge_angles[i];
+        console.log('num ' + this.outer_num_ridges);
+        // Draw ridges for outer circle
+        for (j = 0; j < this.outer_num_ridges; j++) {
+            radian_angle = outer_ridge_angles[j];
+            console.log('radian angle ' + radian_angle);
+            drawArc(ctx, x_coord, y_coord, radian_angle, radian_angle + this.outer_delta_radians, this.outer_circle_radius + 2, this.color);
+        }
+
     }
+
     ctx.restore();
 }
 
@@ -245,9 +280,9 @@ RedSpinner.prototype.update = function(elapsed_ms) {
         this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
     }
 
-    for (i = 0; i < this.num_ridges; i++) {
-        this.ridge_angles[i] += (this.rps * elapsed_secs);
-        this.ridge_angles[i] = this.ridge_angles[i] % (2*Math.PI);
+    for (i = 0; i < this.inner_num_ridges; i++) {
+        this.inner_ridge_angles[i] += (this.rps * elapsed_secs);
+        this.inner_ridge_angles[i] = this.inner_ridge_angles[i] % (2*Math.PI);
     }
 }
 
