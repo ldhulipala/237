@@ -109,7 +109,14 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 RedSpinner.prototype = new Spinner();
 RedSpinner.prototype.constructor = RedSpinner;
 
-// Redefine methods of the parent.
+// Redefine methods of the parent. Add class variables.
+
+// outer_circle_angles - the angles of the orbiting circles relative to
+//    the center of the spinner.
+RedSpinner.prototype.outer_circle_angles = [0, FULL_ROTATION / 4, 
+                                            FULL_ROTATION / 2,
+                                            3 * (FULL_ROTATION / 4)]
+
 RedSpinner.prototype.draw = function(ctx) {}
 RedSpinner.prototype.detectCollision = function(area) {} 
 RedSpinner.prototype.update = function(elapsed_ms) {}

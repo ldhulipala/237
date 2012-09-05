@@ -1,8 +1,9 @@
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
-
+//woot
 var intervalId;
 var timer_delay = 10;
+var MOUSE_RADIUS = 5;
 
 var current_spinner;
 
@@ -27,6 +28,13 @@ function drawCircle(ctx, cx, cy, radius, color) {
 //    The area has top-left corner at (x_min, y_min), and bottom-right
 //    corner at (x_max, y_max).
 function Area(x_min, y_min, x_max, y_max) {
+    this.x_min = x_min; 
+    this.y_min = y_min;
+    this.x_max = x_max;
+    this.y_max = y_max;
+}
+
+Area.prototype.update = function(x_min, y_min, x_max, y_max) {
     this.x_min = x_min; 
     this.y_min = y_min;
     this.x_max = x_max;
@@ -70,8 +78,10 @@ Spinner.prototype.isActive = function() {
 }
 
 Spinner.prototype.draw = function(ctx) {}
+
 // detectCollision - may replace 'area' argument with 'mouse_object'.
 Spinner.prototype.detectCollision = function(area) {} 
+
 Spinner.prototype.update = function(elapsed_ms) {}
 
 
@@ -158,7 +168,7 @@ RedSpinner.prototype.update = function(elapsed_ms) {
     this.angle = this.angle % FULL_ROTATION; 
 
     // Update the area of the spinner every time.
-    this.area = new Area(x_min, y_min, x_max, y_max);
+    this.area.update(x_min, y_min, x_max, y_max);
 }
 
 
@@ -170,7 +180,7 @@ RedSpinner.prototype.update = function(elapsed_ms) {
 function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
                        inner_radius, orbit_radius) {
     // Call the parent constructor.
-    Spinner.call(this, orange, pos_x, pos_y, vel_x, vel_y, rps, 
+    Spinner.call(this, "orange", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius);
 }
 
@@ -190,8 +200,9 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {}
 function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
                        inner_radius, orbit_radius) {
     // Call the parent constructor.
-    Spinner.call(this, yellow, pos_x, pos_y, vel_x, vel_y, rps, 
+    Spinner.call(this, "yellow", pos_x, pos_y, vel_x, vel_y, rps, 
                  inner_radius, orbit_radius);
+    this.orbit_rect_half_width = 2;
 }
 
 // Set up inheritance, correct the constructor.
@@ -199,9 +210,85 @@ YellowSpinner.prototype = new Spinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
 
 // Redefine methods of the parent.
-YellowSpinner.prototype.draw = function(ctx) {}
-YellowSpinner.prototype.detectCollision = function(area) {} 
-YellowSpinner.prototype.update = function(elapsed_ms) {}
+YellowSpinner.prototype.draw = function(ctx) {
+    var vert_length; // Length of the vertical rectangles.
+    var horz_length; // Length of the horizontal rectangles.
+
+    if (this.angle < Math.PI) {
+        vert_length = this.orbit_radius * (this.angle / Math.PI);
+    } else {
+        vert_length = this.orbit_radius * (2 - (this.angle / Math.PI));
+    }
+
+    horz_length = this.orbit_radius - vert_length;
+    
+    ctx.save();
+    ctx.translate(this.pos_x, this.pos_y);
+    ctx.rotate(this.angle);
+    ctx.fillStyle = this.color;
+
+    // Draw the inner circle
+    drawCircle(ctx, 0, 0, this.inner_radius, this.color);
+
+    // Draw the top rectangle.
+    ctx.fillRect(-horz_length, 
+                 -this.orbit_radius - this.orbit_rect_half_width,
+                 2 * horz_length, 2 * this.orbit_rect_half_width);
+
+    // Draw the bottom rectangle.
+    ctx.fillRect(-horz_length, 
+                 this.orbit_radius - this.orbit_rect_half_width,
+                 2 * horz_length, 2 *  this.orbit_rect_half_width);
+
+    // Draw the right rectangle.
+    ctx.fillRect(this.orbit_radius - this.orbit_rect_half_width, 
+                 -vert_length,
+                 2 *  this.orbit_rect_half_width, 2 * vert_length);
+
+    // Draw the left rectangle.
+    ctx.fillRect(-this.orbit_radius - this.orbit_rect_half_width, 
+                 -vert_length,
+                 2 *  this.orbit_rect_half_width, 2 * vert_length);
+
+    ctx.restore();
+}
+
+
+YellowSpinner.prototype.detectCollision = function(x, y) {
+    var mouse_area = new Area(x - MOUSE_RADIUS, y - MOUSE_RADIUS,
+                              x + MOUSE_RADIUS, y + MOUSE_RADIUS);
+    if (detectAreaOverlap(this.area, mouse_area) === false) {
+        return false;
+    }
+    
+    // Detect overlap with the inner circle. 
+    if (detectCircleOverlap(x, y, MOUSE_RADIUS, this.pos_x, this.pos_y,
+                            this.inner_radius)) {
+        return true;
+    }
+    
+    // Detect overlap with the orbiting rectangles.
+} 
+
+YellowSpinner.prototype.update = function(elapsed_ms) {
+    var orbit_radius = this.orbit_radius;
+    var orbit_rect_half_width = this.orbit_rect_half_width;
+    var x_min = this.pos_x - orbit_radius - orbit_rect_half_width;
+    var y_min = this.pos_y - orbit_radius - orbit_rect_half_width;
+    var x_max = this.pos_x + orbit_radius + orbit_rect_half_width;
+    var y_max = this.pos_y + orbit_radius + orbit_rect_half_width;
+
+    var elapsed_secs = elapsed_ms / 1000; // Ellapsed time in seconds
+
+    this.pos_x += this.vel_x * elapsed_secs;
+    this.pos_y += this.vel_y * elapsed_secs;
+    this.angle += (this.rps * elapsed_secs);
+    this.angle = this.angle % FULL_ROTATION; 
+
+    // Update the area of the spinner every time.
+    this.area.update(x_min, y_min, x_max, y_max);
+}
+
 
 
 // ... And so on for green, blue, and purple spinners. 
@@ -225,9 +312,16 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new RedSpinner(canvas.width, canvas.height, 
-                                     -canvas.width/2, -canvas.height/2,
-                                     Math.PI, 10, 100);
+    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+                                        -canvas.width/8, -canvas.height/8,
+                                        Math.PI/2, 10, 100);
+    //current_spinner.angle = FULL_ROTATION/16;
+    //current_spinner.draw(ctx);
+/*
+    ctx.fillRect((canvas.width/2) - 100, 
+                 (canvas.height/2) - 100 - 2,
+                 2 * 100, 2 * 2);
+*/
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
