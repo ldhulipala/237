@@ -252,7 +252,7 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
     ctx.translate(this.pos_x, this.pos_y);
 
     // Draw the inner circle
-    drawCircle(ctx, 0, 0, this.inner_radius-2, this.color);
+    drawCircle(ctx, 0, 0, 0.5*this.inner_radius, this.color);
     // Draw ridges for inner circles
     for (i = 0; i < this.inner_num_ridges; i++) {
         radian_angle = this.inner_ridge_angles[i];
@@ -263,12 +263,10 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
     for (i = 0; i < this.num_orbiting_circles; i++) {
         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
         y_coord = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
-        drawCircle(ctx, x_coord, y_coord, this.outer_circle_radius-2, 
+        drawCircle(ctx, x_coord, y_coord, 0.5*this.outer_circle_radius, 
                    this.color);
 
         outer_ridge_angles = this.outer_ridge_angles[i];
-        console.log('this.outer_num_ridges ' + this.outer_num_ridges);
-        console.log('outer_ridge_angles ' + outer_ridge_angles);
         // Draw ridges for outer circle
         for (j = 0; j < this.outer_num_ridges; j++) {
             radian_angle = outer_ridge_angles[j];
@@ -330,15 +328,9 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 
     var inner_num_ridges = 4; // Number of spikes on inner circle
     var outer_num_ridges = 3; // Nummber of spikes on outer circles
-    var inner_delta_radians = (2*Math.PI)/(2*inner_num_ridges);
-    var outer_delta_radians = (2*Math.PI)/(2*outer_num_ridges);
+    var inner_delta_radians = Math.PI/inner_num_ridges;
+    var outer_delta_radians = Math.PI/outer_num_ridges;
     var radian_angle = 0;
-
-    // Area bounds for the spinner.
-    var x_min = pos_x - orbit_radius - outer_circle_radius;
-    var y_min = pos_y - orbit_radius - outer_circle_radius;
-    var x_max = pos_x + orbit_radius + outer_circle_radius;
-    var y_max = pos_y + orbit_radius + outer_circle_radius; 
 
     var i;
     var j;
@@ -355,9 +347,6 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     this.inner_delta_radians = inner_delta_radians;
     this.outer_delta_radians = outer_delta_radians;
 
-    // Define the spinner's area.
-    this.area = new Area(x_min, y_min, x_max, y_max);
-
     this.inner_num_ridges = inner_num_ridges;
     this.outer_num_ridges = outer_num_ridges;
 
@@ -373,7 +362,6 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 
     for (i = 0; i < num_orbiting_circles; i++) {
         this.outer_ridge_angles[i] = new Array(outer_num_ridges);
-        console.log(outer_num_ridges);
         for (j = 0; j < outer_num_ridges; j++) {
             this.outer_ridge_angles[i][j] = radian_angle + i*outer_delta_radians;
             radian_angle += 2*outer_delta_radians;
@@ -392,13 +380,14 @@ OrangeSpinner.prototype.draw_fn = function(ctx, center_x, center_y, start_angle,
     var angle = (start_angle + end_angle) / 2;
     var x = radius * Math.cos(angle);
     var y = radius * Math.sin(angle);
-    var start_x = radius * Math.cos(start_angle);
-    var start_y = radius * Math.sin(start_angle);
-    var end_x = radius * Math.cos(end_angle);
-    var end_y = radius * Math.sin(end_angle); 
+    var start_x = 0.5*radius * Math.cos(start_angle);
+    var start_y = 0.5*radius * Math.sin(start_angle);
+    var end_x = 0.5*radius * Math.cos(end_angle);
+    var end_y = 0.5*radius * Math.sin(end_angle); 
     
     ctx.fillStyle = color;
     ctx.beginPath();
+    console.log('center x ' + center_x);
 
     // Left line
     ctx.moveTo(center_x + start_x, center_y + start_y);
@@ -650,7 +639,7 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-        current_spinner = new RedSpinner(canvas.width, canvas.height, 
+        current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
                                          -canvas.width/10, -canvas.height/10,
                                          Math.PI, 10, 100, 4, 5); 
     }
@@ -661,7 +650,7 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new RedSpinner(canvas.width, canvas.height, 
+    current_spinner = new OrangeSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
 
