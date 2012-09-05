@@ -536,6 +536,15 @@ function onMouseMove(event) {
 }
 canvas.addEventListener('mousemove', onMouseMove, false);
 
+function onKeyDown(event) {
+    // r resets the game
+    if (event.keyCode === 82) {
+        spinners_on_board.splice(0,spinners_on_board.length);
+    }
+}
+
+canvas.addEventListener('keydown', onKeyDown, false);
+
 function redrawAll() {
     var spinner;
     var i;
@@ -578,7 +587,6 @@ function spawn() {
         constructor = GreenSpinner;
     }
     newSpinner = getRandomizedSpinner(constructor);
-    console.log('THIS ' + newSpinner);
     spinners_on_board.push(newSpinner);
     return;
 }
@@ -594,7 +602,7 @@ function getRandomizedSpinner(spinner_constructor) {
     var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
     var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
     // RPS is in range [Pi/2, 3Pi/2]
-    var rps = Math.PI/2 + Math.random()*Math.PI;
+    var rps = Math.PI/2 + Math.random()*Math.PI/2;
 
     index = Math.floor(Math.random() + 0.5);
     start_x = start_positions_x[index];
@@ -614,6 +622,8 @@ function getRandomizedSpinner(spinner_constructor) {
 
 function run() {
     spinners_on_board = [];
+    // Put an initial spinner on the board.
+    spawn();
 
     current_spinner = new GreenSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10, Math.PI);
@@ -621,7 +631,7 @@ function run() {
     canvas.setAttribute('tabindex','0');
     canvas.focus();
     intervalId = setInterval(onTimer, timer_delay);
-    spawnIntervalId = setInterval(spawn, 1000);
+    spawnIntervalId = setInterval(spawn, 5000);
 }
 
 run();
