@@ -252,18 +252,18 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
     ctx.translate(this.pos_x, this.pos_y);
 
     // Draw the inner circle
-    drawCircle(ctx, 0, 0, this.inner_radius, this.color);
+    drawCircle(ctx, 0, 0, this.inner_radius-2, this.color);
     // Draw ridges for inner circles
     for (i = 0; i < this.inner_num_ridges; i++) {
         radian_angle = this.inner_ridge_angles[i];
-        this.draw_fn(ctx, 0, 0, radian_angle, radian_angle + inner_delta_radians, this.inner_radius+2, this.color);
+        this.draw_fn(ctx, 0, 0, radian_angle, radian_angle + inner_delta_radians, this.inner_radius, this.color);
     }
 
     // Draw the outer circle
     for (i = 0; i < this.num_orbiting_circles; i++) {
         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
         y_coord = this.orbit_radius * Math.sin(this.outer_circle_angles[i]);
-        drawCircle(ctx, x_coord, y_coord, this.outer_circle_radius, 
+        drawCircle(ctx, x_coord, y_coord, this.outer_circle_radius-2, 
                    this.color);
 
         outer_ridge_angles = this.outer_ridge_angles[i];
@@ -272,7 +272,7 @@ RedSpinner.prototype.draw = function(ctx, draw_fn) {
         // Draw ridges for outer circle
         for (j = 0; j < this.outer_num_ridges; j++) {
             radian_angle = outer_ridge_angles[j];
-            this.draw_fn(ctx, x_coord, y_coord, radian_angle, radian_angle + this.outer_delta_radians, this.outer_circle_radius + 2, this.color);
+            this.draw_fn(ctx, x_coord, y_coord, radian_angle, radian_angle + this.outer_delta_radians, this.outer_circle_radius, this.color);
         }
 
     }
@@ -328,8 +328,8 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var num_orbiting_circles = 6;
     var outer_circle_radius = 5;
 
-    var inner_num_ridges = 4;
-    var outer_num_ridges = 3;
+    var inner_num_ridges = 4; // Number of spikes on inner circle
+    var outer_num_ridges = 3; // Nummber of spikes on outer circles
     var inner_delta_radians = (2*Math.PI)/(2*inner_num_ridges);
     var outer_delta_radians = (2*Math.PI)/(2*outer_num_ridges);
     var radian_angle = 0;
@@ -387,11 +387,11 @@ OrangeSpinner.prototype.constructor = OrangeSpinner;
 
 var orange_delta_radius = 0.5;
 
+
 OrangeSpinner.prototype.draw_fn = function(ctx, center_x, center_y, start_angle, end_angle, radius, color) {
-    console.log('HERERERERJKELJRKEJ');
     var angle = (start_angle + end_angle) / 2;
-    var x = 1.5 * radius * Math.cos(angle);
-    var y = 1.5 * radius * Math.sin(angle);
+    var x = radius * Math.cos(angle);
+    var y = radius * Math.sin(angle);
     var start_x = radius * Math.cos(start_angle);
     var start_y = radius * Math.sin(start_angle);
     var end_x = radius * Math.cos(end_angle);
@@ -642,7 +642,7 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-        current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+        current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                          -canvas.width/10, -canvas.height/10,
                                          Math.PI, 10, 100, 4, 5); 
     }
@@ -653,7 +653,7 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+    current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
 
