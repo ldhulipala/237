@@ -112,11 +112,17 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     var num_orbiting_circles = 4;
     var outer_circle_radius = 5;
 
+    var num_ridges = 5;
+    var delta_radians = (2*Math.PI)/(2*num_ridges);
+    var radian_angle = 0;
+
     // Area bounds for the spinner.
     var x_min = pos_x - orbit_radius - outer_circle_radius;
     var y_min = pos_y - orbit_radius - outer_circle_radius;
     var x_max = pos_x + orbit_radius + outer_circle_radius;
     var y_max = pos_y + orbit_radius + outer_circle_radius; 
+
+    var i;
 
     // Call the parent constructor.
     Spinner.call(this, "red", pos_x, pos_y, vel_x, vel_y, rps, 
@@ -126,9 +132,17 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps,
     // have radius 5.
     this.num_orbiting_circles = num_orbiting_circles;
     this.outer_circle_radius = outer_circle_radius;
+    this.delta_radians = delta_radians;
     
     // Define the spinner's area.
     this.area = new Area(x_min, y_min, x_max, y_max);
+    this.num_ridges = num_ridges;
+    this.ridge_angles = new Array(num_ridges);
+
+    for (i = 0; i < num_ridges; i++) {
+        this.ridge_angles[i] = radian_angle;
+        radian_angle += 2*delta_radians;
+    }
 }
 
 // Set up inheritance, correct the constructor.
@@ -137,16 +151,45 @@ RedSpinner.prototype.constructor = RedSpinner;
 
 // Redefine methods of the parent. Add class variables.
 
+function drawArc(ctx, center_x, center_y, start_angle, end_angle, radius, color) {
+    var left_x = radius * Math.cos(start_angle);
+    var left_y = radius * Math.sin(start_angle);
+    var right_x = radius * Math.cos(end_angle);
+    var right_y = radius * Math.sin(end_angle);
+    
+    ctx.fillStyle = color;
+    ctx.beginPath();
+
+    // Left line
+    ctx.moveTo(center_x, center_y);
+    ctx.lineTo(center_x + left_x, center_y + left_y);
+
+    // Arc
+    ctx.arc(center_x, center_y, radius, start_angle, end_angle, false);
+
+    //Right line
+    ctx.moveTo(center_x + right_x, center_y + right_y);
+    ctx.lineTo(center_x, center_y);
+    
+    ctx.fill();
+}
+
 RedSpinner.prototype.draw = function(ctx) {
     var i;
     var x_coord; // x-position of the current outer circle to draw.
     var y_coord; // y-position of the current outer circle to draw.
+    var radian_angle;
+    var delta_radians = this.delta_radians;
 
     ctx.save();
     ctx.translate(this.pos_x, this.pos_y);
 
     // Draw the inner circle
     drawCircle(ctx, 0, 0, this.inner_radius, this.color);
+    for (i = 0; i < this.num_ridges; i++) {
+        radian_angle = this.ridge_angles[i];
+        drawArc(ctx, 0, 0, radian_angle, radian_angle + delta_radians, this.inner_radius+2, this.color);
+    }
 
     for (i = 0; i < this.num_orbiting_circles; i++) {
         x_coord = this.orbit_radius * Math.cos(this.outer_circle_angles[i]);
@@ -200,6 +243,11 @@ RedSpinner.prototype.update = function(elapsed_ms) {
     for (i = 0; i < this.num_orbiting_circles; i++) {
         this.outer_circle_angles[i] += (this.rps * elapsed_secs);
         this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
+    }
+
+    for (i = 0; i < this.num_ridges; i++) {
+        this.ridge_angles[i] += (this.rps * elapsed_secs);
+        this.ridge_angles[i] = this.ridge_angles[i] % (2*Math.PI);
     }
 }
 
@@ -281,11 +329,12 @@ OrangeSpinner.prototype.update = function(elapsed_ms) {
     }
 }
 
-var YELLOW_INITIAL_ORBIT_RADIUS;
-var yellow_delta_radius = 0.5;
 /************************************/
 /* Define the Yellow Spinner object */
 /************************************/
+var YELLOW_INITIAL_ORBIT_RADIUS;
+var yellow_delta_radius = 0.5;
+
 function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
                        inner_radius, orbit_radius) {
 
@@ -318,7 +367,6 @@ function YellowSpinner(pos_x, pos_y, vel_x, vel_y, rps,
 YellowSpinner.prototype = new RedSpinner();
 YellowSpinner.prototype.constructor = YellowSpinner;
 
-
 YellowSpinner.prototype.update = function(elapsed_ms) {
     var orbit_radius;
     var outer_circle_radius;
@@ -336,6 +384,97 @@ YellowSpinner.prototype.update = function(elapsed_ms) {
     // Start increasing orbit radius
     if (this.orbit_radius === YELLOW_INITIAL_ORBIT_RADIUS) {
         yellow_delta_radius = 0.5;
+    }
+
+    this.orbit_radius += yellow_delta_radius;
+    orbit_radius = this.orbit_radius;
+    outer_circle_radius = this.outer_circle_radius;
+
+    // Calculate new boundaries
+    x_min = this.pos_x - orbit_radius - outer_circle_radius;
+    y_min = this.pos_y - orbit_radius - outer_circle_radius;
+    x_max = this.pos_x + orbit_radius + outer_circle_radius;
+    y_max = this.pos_y + orbit_radius + outer_circle_radius;
+    i;
+
+    elapsed_secs = elapsed_ms / 1000; // Elapsed time in seconds
+
+    // Calculate new center of middle circle and angle of orbiting circles.
+    this.pos_x += this.vel_x * elapsed_secs;
+    this.pos_y += this.vel_y * elapsed_secs;
+    this.angle += (this.rps * elapsed_secs);
+    this.angle = this.angle % FULL_ROTATION; 
+
+    // Update the area of the spinner every time.
+    this.area.update(x_min, y_min, x_max, y_max);
+
+    for (i = 0; i < this.num_orbiting_circles; i++) {
+        this.outer_circle_angles[i] += (this.rps * elapsed_secs);
+        this.outer_circle_angles[i] = this.outer_circle_angles[i] % (2*Math.PI);
+    }
+}
+
+var GREEN_INITIAL_POSITION_X;
+var GREEN_INITIAL_POSITION_Y;
+var GREEN_INITIAL_ORBIT_RADIUS;
+
+/************************************/
+/* Define the Green Spinner object */
+/************************************/
+function GreenSpinner(pos_x, pos_y, vel_x, vel_y, rps, 
+                       inner_radius, orbit_radius) {
+
+    // Green Spinners are defined to have 12 orbiting circles with radius 5.
+    var num_orbiting_circles = 12;
+    var outer_circle_radius = 5; 
+
+    // Area bounds for the spinner.
+    var x_min = pos_x - orbit_radius - outer_circle_radius;
+    var y_min = pos_y - orbit_radius - outer_circle_radius;
+    var x_max = pos_x + orbit_radius + outer_circle_radius;
+    var y_max = pos_y + orbit_radius + outer_circle_radius; 
+
+    GREEN_INITIAL_POSITION_X = pos_x;
+    GREEN_INITIAL_POSITION_Y = pos_y;
+    GREEN_INITIAL_ORBIT_RADIUS = orbit_radius;
+
+    // Call the parent constructor.
+    Spinner.call(this, "green", pos_x, pos_y, vel_x, vel_y, rps, 
+                 inner_radius, orbit_radius, num_orbiting_circles, outer_circle_radius);
+    // Define the spinner's area.
+    this.area = new Area(x_min, y_min, x_max, y_max);
+
+    // Green Spinners are defined to have 12 orbiting circles with radius 5.
+    this.num_orbiting_circles = num_orbiting_circles;
+    this.outer_circle_radius = outer_circle_radius;
+}
+
+// Set up inheritance, correct the constructor.
+GreenSpinner.prototype = new RedSpinner();
+GreenSpinner.prototype.constructor = GreenSpinner;
+
+GreenSpinner.prototype.update = function(elapsed_ms) {
+    var orbit_radius;
+    var outer_circle_radius;
+    var x_min;
+    var y_min;
+    var x_max;
+    var y_max;
+    var i;
+    var elapsed_secs;
+    var green_delta_radius = 0.5;
+
+   if (Math.sqrt(Math.pow(GREEN_INITIAL_POSITION_X - this.pos_x, 2) +
+        Math.pow(GREEN_INITIAL_POSITION_Y - this.pos_y,2)) >= canvas.width/2) {
+        if (this.orbit_radius < GREEN_INITIAL_ORBIT_RADIUS) {
+            this.orbit_radius += green_delta_radius; 
+        }
+        else {
+            // Delete the circle
+        }   
+    }
+    else {
+
     }
 
     this.orbit_radius += yellow_delta_radius;
@@ -386,7 +525,7 @@ function redrawAll() {
     current_spinner.update(timer_delay);
     
     if (!current_spinner.isActive()) {
-        current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+        current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                          -canvas.width/10, -canvas.height/10,
                                          Math.PI, 10, 100, 4, 5); 
     }
@@ -397,7 +536,7 @@ function onTimer() {
 }
 
 function run() {
-    current_spinner = new YellowSpinner(canvas.width, canvas.height, 
+    current_spinner = new RedSpinner(canvas.width, canvas.height, 
                                      -canvas.width/10, -canvas.height/10,
                                      Math.PI, 10, 100, 4, 5);
 
