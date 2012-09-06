@@ -48,10 +48,11 @@ var game = {
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.font = 'Bold 30px Sans-Serif';
+        ctx.fillText("spinner.js", canvas.width/3 + 30, canvas.height/3);
         ctx.fillRect(canvas.width/2 - 60, canvas.height/2 - 20,
                      this.startWidth, this.startHeight);
         ctx.fillStyle = "#000000";
-        ctx.font = 'Bold 30px Sans-Serif';
         ctx.fillText("start", canvas.width/2 - 35, canvas.height/2 + 10);
         canvas.addEventListener('mousedown', this.onMouseClick, false);
     },
@@ -67,6 +68,7 @@ var game = {
         intervalId = setInterval(onTimer, timer_delay);
         spawnIntervalId = setInterval(spawn, 3000);
         game.lives = game.max_lives;
+        ELAPSED_MS = 0;
     },
 
     endGame : function() {
