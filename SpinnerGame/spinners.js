@@ -2,7 +2,7 @@ var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 
 var intervalId;
-var spawnIntervalId;
+//var spawnIntervalId;
 var mouseIntervalId;
 var timer_delay = 10;
 var ELAPSED_MS = 0;
@@ -118,8 +118,9 @@ var game = {
     },
 
     endGame : function() {
+        console.log("caslled");
         window.clearInterval(intervalId);
-        window.clearInterval(spawnIntervalId);
+        //window.clearInterval(spawnIntervalId);
         animation.shouldDraw = false;
         game.showStart();
     },
@@ -218,13 +219,13 @@ var animation = {
 function MouseParticle(pos_x, pos_y) {
     this.pos_x = pos_x;
     this.pos_y = pos_y;
-    this.timer = 100;
+    this.timer = 140;
 }
 
 MouseParticle.prototype.radius = 4;
 
 MouseParticle.prototype.draw = function(ctx) {
-    var alpha = this.timer/250;
+    var alpha = this.timer/140;
     ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
     ctx.beginPath();
     ctx.arc(this.pos_x, this.pos_y, this.radius, 0, FULL_ROTATION, true);
@@ -240,8 +241,8 @@ var mouse_trail = [];
 
 var MouseTrail = {
     render_every : 5,
-    max_particles : 20,
-    timer : 5,
+    max_particles : 30,
+    timer : 3,
 
     render_particles : function(ctx) {
         MouseTrail.timer = MouseTrail.timer - 1;
@@ -448,7 +449,7 @@ function RedSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     var outer_num_ridges = 4;
 
     var inner_radius = 15;
-    var orbit_radius = 50;
+    var orbit_radius = 100;
 
     // Call the parent constructor.
     Spinner.call(this, "red", pos_x, pos_y, vel_x, vel_y, rps,
@@ -591,7 +592,7 @@ function OrangeSpinner(pos_x, pos_y, vel_x, vel_y, rps) {
     var outer_num_ridges = 3;
 
     var inner_radius = 10;
-    var orbit_radius = 50;
+    var orbit_radius = 100;
 
     // Call the parent constructor.
     Spinner.call(this, "orange", pos_x, pos_y, vel_x, vel_y, rps,
@@ -796,6 +797,7 @@ function onMouseMove(event) {
     MOUSE_Y = event.pageY - canvas.offsetTop;
 }
 
+/*
 function onKeyDown(event) {
     // r resets the game
     if (event.keyCode === 82) {
@@ -803,6 +805,7 @@ function onKeyDown(event) {
         game.startGame();
     }
 }
+*/
 
 canvas.addEventListener('keydown', onKeyDown, false);
 
@@ -836,7 +839,7 @@ function redrawAll(respawn) {
             // Because the spinner 'disappeared' - we will increase the
             // score. The score will be purely based on the number of
             // spinners that the player survives.
-            game.incrementScore(5 + game.level*10);
+            //game.incrementScore(5 + game.level*10);
             if (respawn === true) {
                 switch(spinner.color) {
                 case "red":
@@ -862,72 +865,25 @@ function onTimer() {
 }*/
 
 function onTimer() {
-    var one_sec = 1000; // 1 sec in ms.
-    var five_secs = 5 * 1000; // 5 secs in ms.
+    var ten_secs = 10 * 1000; // 5 secs in ms.
 
-    var rand;
-    switch(ELAPSED_MS) {
-    case 0:
-        spawn(RedSpinner);
-        break;
-    case one_sec:
-        spawn(RedSpinner);
-        break;
-    case (2 * one_sec):
-        spawn(RedSpinner);
-        break;
-    case five_secs:
-        spawn(OrangeSpinner);
-        break;
-    case (2 * five_secs): // 10s
-        spawn(OrangeSpinner);
-        break;
-    case (3 * five_secs): // 15s
-        spawn(YellowSpinner);
-        break;
-    case (5 * five_secs): // 25s
-        spawn(YellowSpinner);
-        break;
-    }
+    var rand = parseInt(4 * Math.random()); // rand
 
-
-    // If over 30s, first round is over. Wait till the currrent spinners
-    // die of natural causes.
-    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length > 0) &&
-        (ELAPSED_MS < (8 * five_secs))) {
-        game.level = 1;
-        redrawAll(false);
-        ELAPSED_MS += timer_delay;
-        return;
-    }
-
-    // If the previous round's spinners are all gone, launch into a new
-    // round (where a random spinners is added every 5 secs).
-    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length === 0)) {
-        game.level = 2;
-        spawn(RedSpinner);
-        spawn(OrangeSpinner);
-        spawn(YellowSpinner);
-        spawn(GreenSpinner);
-    }
-
-    rand = parseInt(4 * Math.random()); // rand
-
-    if (ELAPSED_MS > (8 * five_secs)) {
-        // Every 5 secs, spawn a random spinner.
-        game.level = 3;
-        if ((ELAPSED_MS % five_secs) === 0) {
-            if (rand === 0) {
-                spawn(RedSpinner);
-            } else if (rand === 1) {
-                spawn(OrangeSpinner);
-            } else if (rand === 2) {
-                spawn(YellowSpinner);
-            } else {
-                spawn(GreenSpinner);
-            }
+    if ((ELAPSED_MS % ten_secs) === 0) {
+        if (ELAPSED_MS > 0) {
+            game.incrementScore(10);
+        }
+        if (rand === 0) {
+            spawn(RedSpinner);
+        } else if (rand === 1) {
+            spawn(OrangeSpinner);
+        } else if (rand === 2) {
+            spawn(YellowSpinner);
+        } else {
+            spawn(GreenSpinner);
         }
     }
+
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
         if (spinner.detectCollision(inShape) === true) {
@@ -957,7 +913,12 @@ function getRandomizedSpinner(spinner_constructor) {
     var velocity_x = (0.10 + 0.15*Math.random())*canvas.width;
     var velocity_y = (0.10 + 0.15*Math.random())*canvas.height;
     // RPS is in range [Pi/2, 3Pi/2]
-    var rps = Math.PI/2 + Math.random()*Math.PI/2;
+    var rps;
+    if (spinner_constructor === GreenSpinner) {
+        rps = Math.random()*Math.PI/4;
+    } else {
+        var rps = Math.PI/2 + Math.random()*Math.PI/2;
+    }
 
     index = Math.floor(Math.random() + 0.5);
     start_x = start_positions_x[index];
