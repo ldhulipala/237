@@ -3,17 +3,17 @@ var ctx = canvas.getContext("2d");
 
 var intervalId;
 var spawnIntervalId;
+var mouseIntervalId;
 var timer_delay = 10;
 var ELAPSED_MS = 0;
-var score_timer = 0;
 
 var spinners_on_board;
 
 var FULL_ROTATION = 2*Math.PI; // Number of radians in a circle.
 var CANVAS_AREA = new Area(0, 0, canvas.width, canvas.height);
 var MOUSE_RADIUS = 5;
-var MOUSE_X;
-var MOUSE_Y;
+var MOUSE_X = canvas.width/2;
+var MOUSE_Y = canvas.height/2;
 
 function onKeyDown(event) {
     // r resets the game
@@ -52,6 +52,21 @@ var game = {
         }
     },
 
+/*    onMouseMove : function(event) {
+        MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
+        MOUSE_Y = event.pageY - canvas.offsetTop;
+    }, */
+
+
+
+    showStart : function() {
+        canvas.addEventListener('mousedown', game.onMouseClick, false);
+        canvas.addEventListener('mousemove', onMouseMove, false);
+        mouseIntervalId = setInterval(game.startTimer, timer_delay);
+        spinners_on_board = [];
+        game.drawBackground();
+    },
+
     drawBackground : function() {
         game.state = "Start";
         ctx.fillStyle = "#000000";
@@ -68,6 +83,7 @@ var game = {
 
     startGame : function() {
         spinners_on_board = [];
+        window.clearInterval(mouseIntervalId);
         canvas.addEventListener('mousemove', onMouseMove, false);
         // Put an initial spinner on the board.
         spawn();
@@ -78,6 +94,7 @@ var game = {
         spawnIntervalId = setInterval(spawn, 3000);
         game.lives = game.max_lives;
         ELAPSED_MS = 0;
+        game.level = 0;
     },
 
     incrementScore : function(increment) {
@@ -87,8 +104,9 @@ var game = {
 
     endGame : function() {
         window.clearInterval(intervalId);
+        window.clearInterval(spawnIntervalId);
         animation.shouldDraw = false;
-        game.drawBackground();
+        game.showStart();
     },
 
     removeLife : function () {
@@ -116,6 +134,15 @@ var game = {
         var the_text = "Score : "+ game.score;
         ctx.fillText(the_text, canvas.width - 80,20);
     },
+
+    startTimer : function () {
+        game.startRedrawAll();
+    },
+
+    startRedrawAll : function () {
+        game.drawBackground();
+        MouseTrail.render_particles(ctx);
+    },
 }
 
 var animation = {
@@ -135,7 +162,6 @@ var animation = {
 
     fadeText : function () {
         if ((animation.shouldDraw === true) && (game.state === "Running")) {
-            console.log("fading");
             ctx.fillStyle = "rgba(255,255,255,"+animation.font_alpha+")";
             ctx.font = 'Bold 25 Sans-Serif';
             ctx.fillText(animation.fade_text, animation.fade_x,
@@ -192,7 +218,6 @@ var MouseTrail = {
             if (mouse_trail.length < MouseTrail.max_particles) {
                 var particle = new MouseParticle(MOUSE_X, MOUSE_Y);
                 mouse_trail.push(particle);
-                console.log(mouse_trail);
             }
             MouseTrail.timer = 5;
          }
@@ -916,7 +941,7 @@ function getRandomizedSpinner(spinner_constructor) {
 
 
 function run() {
-    game.drawBackground();
+    game.showStart();
 }
 
 run();
