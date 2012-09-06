@@ -23,6 +23,7 @@ function onKeyDown(event) {
         game.endGame();
     }
 }
+var COUNT = 0;
 
 var game = {
     state : "Start",
@@ -143,12 +144,17 @@ var game = {
     },
 
     startRedrawAll : function () {
+        var constructors = [RedSpinner, YellowSpinner, OrangeSpinner, GreenSpinner];
         game.drawBackground();
         MouseTrail.render_particles(ctx);
         if (DEMO_MS > 5000) {
             DEMO_MS = 0;
-            spawn(RedSpinner);
+            console.log(constructors[COUNT]);
+            spawn(constructors[COUNT]);
         }
+        COUNT += 1;
+        COUNT = COUNT % 4;
+        console.log('count ', COUNT);
 
         for (i = 0; i < spinners_on_board.length; i++) {
             spinner = spinners_on_board[i];
