@@ -24,23 +24,27 @@ var game = {
     startHeight : 40,
 
     onMouseClick : function(event) {
-        MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
-        MOUSE_Y = event.pageY - canvas.offsetTop;
+        if (game.state === "Start"){
+            MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
+            MOUSE_Y = event.pageY - canvas.offsetTop;
 
-        s_left = canvas.width/2 - game.startWidth/2;
-        s_right = canvas.width/2 + game.startWidth/2;
-        s_top = canvas.height/2 - game.startHeight/2;
-        s_bottom = canvas.height/2 + game.startHeight/2;
+            s_left = canvas.width/2 - game.startWidth/2;
+            s_right = canvas.width/2 + game.startWidth/2;
+            s_top = canvas.height/2 - game.startHeight/2;
+            s_bottom = canvas.height/2 + game.startHeight/2;
 
-        if ((MOUSE_X >= s_left) && (MOUSE_X <= s_right)) {
-            if ((MOUSE_Y >= s_top) && (MOUSE_Y <= s_bottom)) {
-                game.startGame();
-                console.log("Starting game");
+            if ((MOUSE_X >= s_left) && (MOUSE_X <= s_right)) {
+                if ((MOUSE_Y >= s_top) && (MOUSE_Y <= s_bottom)) {
+                    game.state = "Running";
+                    game.startGame();
+                    console.log("Starting game");
+                }
             }
         }
     },
 
     drawBackground : function() {
+        game.state = "Start";
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "rgba(255,255,255,0.6)";
@@ -67,15 +71,17 @@ var game = {
 
     endGame : function() {
         window.clearInterval(intervalId);
+        animation.shouldDraw = false;
         game.drawBackground();
     },
 
     removeLife : function () {
-        game.lives -= 1;
-        if (game.lives == 0) {
+        game.lives = game.lives - 1;
+        if (game.lives === 0) {
             game.endGame();
         }
         else {
+//            animation.startFade("You died!");
             spinners_on_board = [];
         }
     },
@@ -95,12 +101,39 @@ var game = {
     },
 }
 
+var animation = {
+    fade_text : "",
+    shouldDraw : false,
+    font_alpha : 1.0,
+
+    startFade : function(fade_text) {
+        animation.fade_text = fade_text;
+        animation.shouldDraw = true;
+        animation.font_alpha = 1.0;
+    },
+
+    fadeText : function () {
+        if ((animation.shouldDraw === true) && (game.state === "Running")) {
+            console.log("fading");
+            ctx.fillStyle = "rgba(255,255,255"+animation.font_alpha+")";
+            ctx.font = 'Bold 25 Sans-Serif';
+            ctx.fillText(animation.fade_text, canvas.width/2 - 40, canvas.height/2 - 20);
+            animation.font_alpha = animation.font_alpha - 0.05;
+            if ((animation.font_alpha <= 0) || (game.state !="Running")) {
+               animation.shouldDraw = false;
+            }
+        }
+    },
+
+}
+
 // Draws the background. Currently, it draws a black background.
 function drawBackground() {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     game.renderLives();
     game.renderScore();
+    animation.fadeText();
 }
 
 // Draws a circle at (cx, cy) with a given radius and color.
@@ -713,7 +746,7 @@ function onTimer() {
         break;
     }
 
-    //console.log(spinners_on_board);
+
 
     // If over 30s, first round is over. Wait till the currrent spinners
     // die of natural causes.
