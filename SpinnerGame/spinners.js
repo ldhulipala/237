@@ -848,70 +848,22 @@ function onTimer() {
 function onTimer() {
     var one_sec = 1000; // 1 sec in ms.
     var five_secs = 5 * 1000; // 5 secs in ms.
+    var ten_secs = 10 * 1000;
 
-    var rand;
-    switch(ELAPSED_MS) {
-    case 0:
-        spawn(RedSpinner);
-        break;
-    case one_sec:
-        spawn(RedSpinner);
-        break;
-    case (2 * one_sec):
-        spawn(RedSpinner);
-        break;
-    case five_secs:
-        spawn(OrangeSpinner);
-        break;
-    case (2 * five_secs): // 10s
-        spawn(OrangeSpinner);
-        break;
-    case (3 * five_secs): // 15s
-        spawn(YellowSpinner);
-        break;
-    case (5 * five_secs): // 25s
-        spawn(YellowSpinner);
-        break;
-    }
+    var rand = parseInt(4 * Math.random()); // rand
 
-
-    // If over 30s, first round is over. Wait till the currrent spinners
-    // die of natural causes.
-    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length > 0) &&
-        (ELAPSED_MS < (8 * five_secs))) {
-        game.level = 1;
-        redrawAll(false);
-        ELAPSED_MS += timer_delay;
-        return;
-    }
-
-    // If the previous round's spinners are all gone, launch into a new
-    // round (where a random spinners is added every 5 secs).
-    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length === 0)) {
-        game.level = 2;
-        spawn(RedSpinner);
-        spawn(OrangeSpinner);
-        spawn(YellowSpinner);
-        spawn(GreenSpinner);
-    }
-
-    rand = parseInt(4 * Math.random()); // rand
-
-    if (ELAPSED_MS > (8 * five_secs)) {
-        // Every 5 secs, spawn a random spinner.
-        game.level = 3;
-        if ((ELAPSED_MS % five_secs) === 0) {
-            if (rand === 0) {
-                spawn(RedSpinner);
-            } else if (rand === 1) {
-                spawn(OrangeSpinner);
-            } else if (rand === 2) {
-                spawn(YellowSpinner);
-            } else {
-                spawn(GreenSpinner);
-            }
+    if ((ELAPSED_MS % ten_secs) === 0) {
+        if (rand === 0) {
+            spawn(RedSpinner);
+        } else if (rand === 1) {
+            spawn(OrangeSpinner);
+        } else if (rand === 2) {
+            spawn(YellowSpinner);
+        } else {
+            spawn(GreenSpinner);
         }
     }
+
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
         if (spinner.detectCollision(inShape) === true) {
