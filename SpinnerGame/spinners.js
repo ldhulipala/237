@@ -5,6 +5,7 @@ var intervalId;
 var spawnIntervalId;
 var timer_delay = 10;
 var ELAPSED_MS = 0;
+var score_timer = 0;
 
 var spinners_on_board;
 
@@ -79,6 +80,11 @@ var game = {
         ELAPSED_MS = 0;
     },
 
+    incrementScore : function(increment) {
+        game.score = game.score + increment;
+        animation.startFade("+"+increment, MOUSE_X, MOUSE_Y + 10);
+    },
+
     endGame : function() {
         window.clearInterval(intervalId);
         animation.shouldDraw = false;
@@ -91,7 +97,8 @@ var game = {
             game.endGame();
         }
         else {
-//            animation.startFade("You died!");
+            animation.startFade("You died!", canvas.width/2 - 45,
+                                canvas.height/2 - 10);
             spinners_on_board = [];
         }
     },
@@ -115,11 +122,15 @@ var animation = {
     fade_text : "",
     shouldDraw : false,
     font_alpha : 1.0,
+    fade_x : canvas.width/2,
+    fade_y : canvas.height/2,
 
-    startFade : function(fade_text) {
+    startFade : function(fade_text, fade_x, fade_y) {
         animation.fade_text = fade_text;
         animation.shouldDraw = true;
         animation.font_alpha = 1.0;
+        animation.fade_x = fade_x;
+        animation.fade_y = fade_y;
     },
 
     fadeText : function () {
@@ -127,8 +138,9 @@ var animation = {
             console.log("fading");
             ctx.fillStyle = "rgba(255,255,255,"+animation.font_alpha+")";
             ctx.font = 'Bold 25 Sans-Serif';
-            ctx.fillText(animation.fade_text, canvas.width/2 - 40, canvas.height/2 - 20);
-            animation.font_alpha = animation.font_alpha - 0.05;
+            ctx.fillText(animation.fade_text, animation.fade_x,
+                         animation.fade_y);
+            animation.font_alpha = animation.font_alpha - 0.01;
             if ((animation.font_alpha <= 0) || (game.state !="Running")) {
                animation.shouldDraw = false;
             }
@@ -749,6 +761,10 @@ function redrawAll(respawn) {
         // given as true.
         else {
             spinners_on_board.splice(i,1)
+            // Because the spinner 'disappeared' - we will increase the
+            // score. The score will be purely based on the number of
+            // spinners that the player survives.
+            game.incrementScore(5 + game.level*10);
             if (respawn === true) {
                 switch(spinner.color) {
                 case "red":
@@ -804,11 +820,11 @@ function onTimer() {
     }
 
 
-
     // If over 30s, first round is over. Wait till the currrent spinners
     // die of natural causes.
     if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length > 0) &&
         (ELAPSED_MS < (8 * five_secs))) {
+        game.level = 1;
         redrawAll(false);
         ELAPSED_MS += timer_delay;
         return;
@@ -817,6 +833,7 @@ function onTimer() {
     // If the previous round's spinners are all gone, launch into a new
     // round (where a random spinners is added every 5 secs).
     if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length === 0)) {
+        game.level = 2;
         spawn(RedSpinner);
         spawn(OrangeSpinner);
         spawn(YellowSpinner);
@@ -827,6 +844,7 @@ function onTimer() {
 
     if (ELAPSED_MS > (8 * five_secs)) {
         // Every 5 secs, spawn a random spinner.
+        game.level = 3;
         if ((ELAPSED_MS % five_secs) === 0) {
             if (rand === 0) {
                 spawn(RedSpinner);
