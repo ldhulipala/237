@@ -6,6 +6,7 @@ var spawnIntervalId;
 var mouseIntervalId;
 var timer_delay = 10;
 var ELAPSED_MS = 0;
+var DEMO_MS = 0;
 
 var spinners_on_board;
 
@@ -67,10 +68,7 @@ var game = {
         game.drawBackground();
     },
 
-    drawBackground : function() {
-        game.state = "Start";
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawStart : function() {
         ctx.fillStyle = "rgba(255,255,255,0.6)";
         ctx.font = 'Bold 30px Sans-Serif';
         ctx.fillText("spinner.js", canvas.width/3 + 30, canvas.height/3);
@@ -78,7 +76,13 @@ var game = {
                      this.startWidth, this.startHeight);
         ctx.fillStyle = "#000000";
         ctx.fillText("start", canvas.width/2 - 35, canvas.height/2 + 10);
-        canvas.addEventListener('mousedown', this.onMouseClick, false);
+
+    },
+
+    drawBackground : function() {
+        game.state = "Start";
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     },
 
     startGame : function() {
@@ -137,11 +141,32 @@ var game = {
 
     startTimer : function () {
         game.startRedrawAll();
+        DEMO_MS += timer_delay;
     },
 
     startRedrawAll : function () {
         game.drawBackground();
         MouseTrail.render_particles(ctx);
+        if (DEMO_MS > 5000) {
+            DEMO_MS = 0;
+            spawn(RedSpinner);
+            console.log("Spawning red spinner");
+        }
+
+        for (i = 0; i < spinners_on_board.length; i++) {
+            spinner = spinners_on_board[i];
+            if (spinner.isActive() === true) {
+                spinner.draw(ctx);
+                spinner.update(timer_delay);
+            }
+            // Else the spinner is no longer active. We remove it from the array,
+            // and respawn a new spinner of the same type if 'respawn' is
+            // given as true.
+            else {
+                spinners_on_board.splice(i,1)
+            }
+        }
+        game.drawStart();
     },
 }
 
@@ -758,8 +783,10 @@ function onMouseMove(event) {
     MOUSE_Y = event.pageY - canvas.offsetTop;
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
-        if (spinner.detectCollision(inShape) === true) {
-            game.removeLife();
+        if (game.state != "Start") {
+            if (spinner.detectCollision(inShape) === true) {
+                game.removeLife();
+            }
         }
     }
 }
