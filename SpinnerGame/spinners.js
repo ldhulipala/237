@@ -89,16 +89,14 @@ var game = {
         spinners_on_board = [];
         window.clearInterval(mouseIntervalId);
         canvas.addEventListener('mousemove', onMouseMove, false);
-        // Put an initial spinner on the board.
-        spawn();
 
         canvas.setAttribute('tabindex','0');
         canvas.focus();
         intervalId = setInterval(onTimer, timer_delay);
-        spawnIntervalId = setInterval(spawn, 3000);
         game.lives = game.max_lives;
         ELAPSED_MS = 0;
         game.level = 0;
+        console.log('elapsed ' + ELAPSED_MS);
     },
 
     incrementScore : function(increment) {
@@ -150,7 +148,6 @@ var game = {
         if (DEMO_MS > 5000) {
             DEMO_MS = 0;
             spawn(RedSpinner);
-            console.log("Spawning red spinner");
         }
 
         for (i = 0; i < spinners_on_board.length; i++) {
@@ -786,6 +783,7 @@ function onMouseMove(event) {
 function onKeyDown(event) {
     // r resets the game
     if (event.keyCode === 82) {
+        console.log('reset');
         game.startGame();
     }
 }
@@ -852,7 +850,6 @@ function onTimer() {
     var five_secs = 5 * 1000; // 5 secs in ms.
 
     var rand;
-    console.log(ELAPSED_MS);
     switch(ELAPSED_MS) {
     case 0:
         spawn(RedSpinner);
@@ -926,23 +923,8 @@ function onTimer() {
 
 }
 
-function spawn() {
-    // Create four values between 0 and 3
-    var choice = Math.floor(Math.random()/0.25);
+function spawn(constructor) {
     var newSpinner;
-    var constructor;
-    if (choice === 0) {
-        constructor = OrangeSpinner;
-    }
-    else if (choice === 1) {
-        constructor = RedSpinner;
-    }
-    else if (choice === 2) {
-        constructor = YellowSpinner;
-    }
-    else if (choice === 3) {
-        constructor = GreenSpinner;
-    }
     newSpinner = getRandomizedSpinner(constructor);
     spinners_on_board.push(newSpinner);
     return;
