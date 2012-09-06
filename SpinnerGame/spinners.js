@@ -14,6 +14,14 @@ var MOUSE_RADIUS = 5;
 var MOUSE_X;
 var MOUSE_Y;
 
+function onKeyDown(event) {
+    // r resets the game
+    if (event.keyCode === 82) {
+//        spinners_on_board.splice(0,spinners_on_board.length);
+        game.endGame();
+    }
+}
+
 var game = {
     state : "Start",
     level : 0,
@@ -117,7 +125,7 @@ var animation = {
     fadeText : function () {
         if ((animation.shouldDraw === true) && (game.state === "Running")) {
             console.log("fading");
-            ctx.fillStyle = "rgba(255,255,255"+animation.font_alpha+")";
+            ctx.fillStyle = "rgba(255,255,255,"+animation.font_alpha+")";
             ctx.font = 'Bold 25 Sans-Serif';
             ctx.fillText(animation.fade_text, canvas.width/2 - 40, canvas.height/2 - 20);
             animation.font_alpha = animation.font_alpha - 0.05;
@@ -126,6 +134,57 @@ var animation = {
             }
         }
     },
+
+}
+
+/* Mouse Trail Logic */
+
+function MouseParticle(pos_x, pos_y) {
+    this.pos_x = pos_x;
+    this.pos_y = pos_y;
+    this.timer = 100;
+}
+
+MouseParticle.prototype.radius = 4;
+
+MouseParticle.prototype.draw = function(ctx) {
+    var alpha = this.timer/250;
+    ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
+    ctx.beginPath();
+    ctx.arc(this.pos_x, this.pos_y, this.radius, 0, FULL_ROTATION, true);
+    ctx.fill();
+    this.timer = this.timer - 1;
+}
+
+MouseParticle.prototype.isDead = function() {
+    return (this.timer <= 0) ? true : false;
+}
+
+var mouse_trail = [];
+
+var MouseTrail = {
+    render_every : 5,
+    max_particles : 20,
+    timer : 5,
+
+    render_particles : function(ctx) {
+        MouseTrail.timer = MouseTrail.timer - 1;
+        for (var i = 0; i < mouse_trail.length; i++) {
+            var particle = mouse_trail[i];
+            particle.draw(ctx);
+            if (particle.isDead()) {
+                mouse_trail.splice(i,1);
+            }
+         }
+         if (MouseTrail.timer <= 0) {
+            if (mouse_trail.length < MouseTrail.max_particles) {
+                var particle = new MouseParticle(MOUSE_X, MOUSE_Y);
+                mouse_trail.push(particle);
+                console.log(mouse_trail);
+            }
+            MouseTrail.timer = 5;
+         }
+     },
 
 }
 
@@ -668,12 +727,7 @@ function onMouseMove(event) {
     }
 }
 
-function onKeyDown(event) {
-    // r resets the game
-    if (event.keyCode === 82) {
-        spinners_on_board.splice(0,spinners_on_board.length);
-    }
-}
+
 
 canvas.addEventListener('keydown', onKeyDown, false);
 
@@ -682,6 +736,7 @@ function redrawAll(respawn) {
     var i;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
+    MouseTrail.render_particles(ctx);
 
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
