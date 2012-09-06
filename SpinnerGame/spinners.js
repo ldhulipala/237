@@ -4,6 +4,7 @@ var ctx = canvas.getContext("2d");
 var intervalId;
 var spawnIntervalId;
 var timer_delay = 10;
+var ELAPSED_MS = 0;
 
 var spinners_on_board;
 
@@ -70,19 +71,27 @@ var game = {
     },
 
     removeLife : function () {
+        game.lives -= 1;
         if (game.lives == 0) {
             game.endGame();
         }
         else {
-            game.lives -= 1;
+            spinners_on_board = [];
         }
-   },
+    },
 
     renderLives : function() {
         ctx.fillStyle = "rgba(255,255,255,0.8)";
         ctx.font = 'Bold 15px Sans-Serif';
-        var the_text = "Lives = "+ game.lives;
+        var the_text = "Lives : "+ game.lives;
         ctx.fillText(the_text, 20,20);
+    },
+
+    renderScore : function() {
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.font = 'Bold 15px Sans-Serif';
+        var the_text = "Score : "+ game.score;
+        ctx.fillText(the_text, canvas.width - 80,20);
     },
 }
 
@@ -91,6 +100,7 @@ function drawBackground() {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     game.renderLives();
+    game.renderScore();
 }
 
 // Draws a circle at (cx, cy) with a given radius and color.
@@ -632,7 +642,7 @@ function onKeyDown(event) {
 
 canvas.addEventListener('keydown', onKeyDown, false);
 
-function redrawAll() {
+function redrawAll(respawn) {
     var spinner;
     var i;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -644,14 +654,105 @@ function redrawAll() {
             spinner.draw(ctx);
             spinner.update(timer_delay);
         }
+        // Else the spinner is no longer active. We remove it from the array,
+        // and respawn a new spinner of the same type if 'respawn' is
+        // given as true.
         else {
             spinners_on_board.splice(i,1)
+            if (respawn === true) {
+                switch(spinner.color) {
+                case "red":
+                    spawn(RedSpinner);
+                    break;
+                 case "orange":
+                    spawn(OrangeSpinner);
+                    break;
+                 case "yellow":
+                    spawn(YellowSpinner);
+                    break;
+                  case "green":
+                    spawn(GreenSpinner);
+                    break;
+                }
+            }
         }
     }
 }
-
+/*
 function onTimer() {
     redrawAll();
+}*/
+
+function onTimer() {
+    var one_sec = 1000; // 1 sec in ms.
+    var five_secs = 5 * 1000; // 5 secs in ms.
+
+    var rand;
+
+    switch(ELAPSED_MS) {
+    case 0:
+        spawn(RedSpinner);
+        break;
+    case one_sec:
+        spawn(RedSpinner);
+        break;
+    case (2 * one_sec):
+        spawn(RedSpinner);
+        break;
+    case five_secs:
+        spawn(OrangeSpinner);
+        break;
+    case (2 * five_secs): // 10s
+        spawn(OrangeSpinner);
+        break;
+    case (3 * five_secs): // 15s
+        spawn(YellowSpinner);
+        break;
+    case (5 * five_secs): // 25s
+        spawn(YellowSpinner);
+        break;
+    }
+
+    //console.log(spinners_on_board);
+
+    // If over 30s, first round is over. Wait till the currrent spinners
+    // die of natural causes.
+    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length > 0) &&
+        (ELAPSED_MS < (8 * five_secs))) {
+        redrawAll(false);
+        ELAPSED_MS += timer_delay;
+        return;
+    }
+
+    // If the previous round's spinners are all gone, launch into a new
+    // round (where a random spinners is added every 5 secs).
+    if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length === 0)) {
+        spawn(RedSpinner);
+        spawn(OrangeSpinner);
+        spawn(YellowSpinner);
+        spawn(GreenSpinner);
+    }
+
+    rand = parseInt(4 * Math.random()); // rand
+
+    if (ELAPSED_MS > (8 * five_secs)) {
+        // Every 5 secs, spawn a random spinner.
+        if ((ELAPSED_MS % five_secs) === 0) {
+            if (rand === 0) {
+                spawn(RedSpinner);
+            } else if (rand === 1) {
+                spawn(OrangeSpinner);
+            } else if (rand === 2) {
+                spawn(YellowSpinner);
+            } else {
+                spawn(GreenSpinner);
+            }
+        }
+    }
+
+    redrawAll(true);
+    ELAPSED_MS += timer_delay;
+
 }
 
 function spawn() {
