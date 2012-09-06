@@ -3,16 +3,26 @@ var ctx = canvas.getContext("2d");
 
 var intervalId;
 var spawnIntervalId;
+var mouseIntervalId;
 var timer_delay = 10;
 var ELAPSED_MS = 0;
+var DEMO_MS = 0;
 
 var spinners_on_board;
 
 var FULL_ROTATION = 2*Math.PI; // Number of radians in a circle.
 var CANVAS_AREA = new Area(0, 0, canvas.width, canvas.height);
 var MOUSE_RADIUS = 5;
-var MOUSE_X;
-var MOUSE_Y;
+var MOUSE_X = canvas.width/2;
+var MOUSE_Y = canvas.height/2;
+
+function onKeyDown(event) {
+    // r resets the game
+    if (event.keyCode === 82) {
+//        spinners_on_board.splice(0,spinners_on_board.length);
+        game.endGame();
+    }
+}
 
 var game = {
     state : "Start",
@@ -43,21 +53,41 @@ var game = {
         }
     },
 
+/*    onMouseMove : function(event) {
+        MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
+        MOUSE_Y = event.pageY - canvas.offsetTop;
+    }, */
+
+
+
+    showStart : function() {
+        canvas.addEventListener('mousedown', game.onMouseClick, false);
+        canvas.addEventListener('mousemove', onMouseMove, false);
+        mouseIntervalId = setInterval(game.startTimer, timer_delay);
+        spinners_on_board = [];
+        game.drawBackground();
+    },
+
+    drawStart : function() {
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.font = 'Bold 30px Sans-Serif';
+        ctx.fillText("spinner.js", canvas.width/3 + 30, canvas.height/3);
+        ctx.fillRect(canvas.width/2 - 60, canvas.height/2 - 20,
+                     this.startWidth, this.startHeight);
+        ctx.fillStyle = "#000000";
+        ctx.fillText("start", canvas.width/2 - 35, canvas.height/2 + 10);
+
+    },
+
     drawBackground : function() {
         game.state = "Start";
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "rgba(255,255,255,0.6)";
-        ctx.fillRect(canvas.width/2 - 60, canvas.height/2 - 20,
-                     this.startWidth, this.startHeight);
-        ctx.fillStyle = "#000000";
-        ctx.font = 'Bold 30px Sans-Serif';
-        ctx.fillText("start", canvas.width/2 - 35, canvas.height/2 + 10);
-        canvas.addEventListener('mousedown', this.onMouseClick, false);
     },
 
     startGame : function() {
         spinners_on_board = [];
+        window.clearInterval(mouseIntervalId);
         canvas.addEventListener('mousemove', onMouseMove, false);
         // Put an initial spinner on the board.
         spawn();
@@ -68,12 +98,19 @@ var game = {
         spawnIntervalId = setInterval(spawn, 3000);
         game.lives = game.max_lives;
         ELAPSED_MS = 0;
+        game.level = 0;
+    },
+
+    incrementScore : function(increment) {
+        game.score = game.score + increment;
+        animation.startFade("+"+increment, MOUSE_X, MOUSE_Y + 10);
     },
 
     endGame : function() {
         window.clearInterval(intervalId);
+        window.clearInterval(spawnIntervalId);
         animation.shouldDraw = false;
-        game.drawBackground();
+        game.showStart();
     },
 
     removeLife : function () {
@@ -82,7 +119,8 @@ var game = {
             game.endGame();
         }
         else {
-//            animation.startFade("You died!");
+            animation.startFade("You died!", canvas.width/2 - 45,
+                                canvas.height/2 - 10);
             spinners_on_board = [];
         }
     },
@@ -100,31 +138,115 @@ var game = {
         var the_text = "Score : "+ game.score;
         ctx.fillText(the_text, canvas.width - 80,20);
     },
+
+    startTimer : function () {
+        game.startRedrawAll();
+        DEMO_MS += timer_delay;
+    },
+
+    startRedrawAll : function () {
+        game.drawBackground();
+        MouseTrail.render_particles(ctx);
+        if (DEMO_MS > 5000) {
+            DEMO_MS = 0;
+            spawn(RedSpinner);
+            console.log("Spawning red spinner");
+        }
+
+        for (i = 0; i < spinners_on_board.length; i++) {
+            spinner = spinners_on_board[i];
+            if (spinner.isActive() === true) {
+                spinner.draw(ctx);
+                spinner.update(timer_delay);
+            }
+            // Else the spinner is no longer active. We remove it from the array,
+            // and respawn a new spinner of the same type if 'respawn' is
+            // given as true.
+            else {
+                spinners_on_board.splice(i,1)
+            }
+        }
+        game.drawStart();
+    },
 }
 
 var animation = {
     fade_text : "",
     shouldDraw : false,
     font_alpha : 1.0,
+    fade_x : canvas.width/2,
+    fade_y : canvas.height/2,
 
-    startFade : function(fade_text) {
+    startFade : function(fade_text, fade_x, fade_y) {
         animation.fade_text = fade_text;
         animation.shouldDraw = true;
         animation.font_alpha = 1.0;
+        animation.fade_x = fade_x;
+        animation.fade_y = fade_y;
     },
 
     fadeText : function () {
         if ((animation.shouldDraw === true) && (game.state === "Running")) {
-            console.log("fading");
-            ctx.fillStyle = "rgba(255,255,255"+animation.font_alpha+")";
+            ctx.fillStyle = "rgba(255,255,255,"+animation.font_alpha+")";
             ctx.font = 'Bold 25 Sans-Serif';
-            ctx.fillText(animation.fade_text, canvas.width/2 - 40, canvas.height/2 - 20);
-            animation.font_alpha = animation.font_alpha - 0.05;
+            ctx.fillText(animation.fade_text, animation.fade_x,
+                         animation.fade_y);
+            animation.font_alpha = animation.font_alpha - 0.01;
             if ((animation.font_alpha <= 0) || (game.state !="Running")) {
                animation.shouldDraw = false;
             }
         }
     },
+
+}
+
+/* Mouse Trail Logic */
+
+function MouseParticle(pos_x, pos_y) {
+    this.pos_x = pos_x;
+    this.pos_y = pos_y;
+    this.timer = 100;
+}
+
+MouseParticle.prototype.radius = 4;
+
+MouseParticle.prototype.draw = function(ctx) {
+    var alpha = this.timer/250;
+    ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
+    ctx.beginPath();
+    ctx.arc(this.pos_x, this.pos_y, this.radius, 0, FULL_ROTATION, true);
+    ctx.fill();
+    this.timer = this.timer - 1;
+}
+
+MouseParticle.prototype.isDead = function() {
+    return (this.timer <= 0) ? true : false;
+}
+
+var mouse_trail = [];
+
+var MouseTrail = {
+    render_every : 5,
+    max_particles : 20,
+    timer : 5,
+
+    render_particles : function(ctx) {
+        MouseTrail.timer = MouseTrail.timer - 1;
+        for (var i = 0; i < mouse_trail.length; i++) {
+            var particle = mouse_trail[i];
+            particle.draw(ctx);
+            if (particle.isDead()) {
+                mouse_trail.splice(i,1);
+            }
+         }
+         if (MouseTrail.timer <= 0) {
+            if (mouse_trail.length < MouseTrail.max_particles) {
+                var particle = new MouseParticle(MOUSE_X, MOUSE_Y);
+                mouse_trail.push(particle);
+            }
+            MouseTrail.timer = 5;
+         }
+     },
 
 }
 
@@ -675,6 +797,16 @@ function redrawAll(respawn) {
     var i;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
+    MouseTrail.render_particles(ctx);
+
+    for (i = 0; i < spinners_on_board.length; i++) {
+        spinner = spinners_on_board[i];
+        if (game.state != "Start") {
+            if (spinner.detectCollision(inShape) === true) {
+                game.removeLife();
+            }
+        }
+    }
 
     for (i = 0; i < spinners_on_board.length; i++) {
         spinner = spinners_on_board[i];
@@ -687,6 +819,10 @@ function redrawAll(respawn) {
         // given as true.
         else {
             spinners_on_board.splice(i,1)
+            // Because the spinner 'disappeared' - we will increase the
+            // score. The score will be purely based on the number of
+            // spinners that the player survives.
+            game.incrementScore(5 + game.level*10);
             if (respawn === true) {
                 switch(spinner.color) {
                 case "red":
@@ -716,7 +852,7 @@ function onTimer() {
     var five_secs = 5 * 1000; // 5 secs in ms.
 
     var rand;
-
+    console.log(ELAPSED_MS);
     switch(ELAPSED_MS) {
     case 0:
         spawn(RedSpinner);
@@ -742,11 +878,11 @@ function onTimer() {
     }
 
 
-
     // If over 30s, first round is over. Wait till the currrent spinners
     // die of natural causes.
     if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length > 0) &&
         (ELAPSED_MS < (8 * five_secs))) {
+        game.level = 1;
         redrawAll(false);
         ELAPSED_MS += timer_delay;
         return;
@@ -755,6 +891,7 @@ function onTimer() {
     // If the previous round's spinners are all gone, launch into a new
     // round (where a random spinners is added every 5 secs).
     if ((ELAPSED_MS > (6 * five_secs)) && (spinners_on_board.length === 0)) {
+        game.level = 2;
         spawn(RedSpinner);
         spawn(OrangeSpinner);
         spawn(YellowSpinner);
@@ -765,6 +902,7 @@ function onTimer() {
 
     if (ELAPSED_MS > (8 * five_secs)) {
         // Every 5 secs, spawn a random spinner.
+        game.level = 3;
         if ((ELAPSED_MS % five_secs) === 0) {
             if (rand === 0) {
                 spawn(RedSpinner);
@@ -841,7 +979,7 @@ function getRandomizedSpinner(spinner_constructor) {
 
 
 function run() {
-    game.drawBackground();
+    game.showStart();
 }
 
 run();
