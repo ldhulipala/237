@@ -67,6 +67,7 @@ var game = {
         intervalId = setInterval(onTimer, timer_delay);
         spawnIntervalId = setInterval(spawn, 3000);
         game.lives = game.max_lives;
+        ELAPSED_MS = 0;
     },
 
     endGame : function() {
@@ -658,18 +659,12 @@ function onMouseMove(event) {
     var spinner;
     MOUSE_X = event.pageX - canvas.offsetLeft;  // do not use event.x, it's not cross-browser!!!
     MOUSE_Y = event.pageY - canvas.offsetTop;
-    for (i = 0; i < spinners_on_board.length; i++) {
-        spinner = spinners_on_board[i];
-        if (spinner.detectCollision(inShape) === true) {
-            game.removeLife();
-        }
-    }
 }
 
 function onKeyDown(event) {
     // r resets the game
     if (event.keyCode === 82) {
-        spinners_on_board.splice(0,spinners_on_board.length);
+        game.startGame();
     }
 }
 
@@ -782,7 +777,12 @@ function onTimer() {
             }
         }
     }
-
+    for (i = 0; i < spinners_on_board.length; i++) {
+        spinner = spinners_on_board[i];
+        if (spinner.detectCollision(inShape) === true) {
+            game.removeLife();
+        }
+    }
     redrawAll(true);
     ELAPSED_MS += timer_delay;
 
